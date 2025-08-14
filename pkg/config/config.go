@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/leegee/KomaevBookingBot/pkg/logger"
+	"github.com/leegeev/KomaevBookingBot/pkg/logger"
 	"github.com/spf13/viper"
 )
 
@@ -22,18 +22,16 @@ type DB struct {
 	RetryDelay time.Duration `mapstructure:"retry_delay"`
 }
 
-// type Server struct {
-// 	Addr            string        `mapstructure:"host"`
-// 	Port            int           `mapstructure:"port"`
-// 	ReadTimeout     time.Duration `mapstructure:"read_timeout"`
-// 	WriteTimeout    time.Duration `mapstructure:"write_timeout"`
-// 	ShutdownTimeout time.Duration `mapstructure:"shutdown_timeout"`
-// }
+type Telegram struct {
+	Token    string         `mapstructure:"token"`
+	OfficeTZ *time.Location `mapstructure:"office_tz"`
+	// BotUsername string `mapstructure:"bot_username"` // если нужно, можно добавить
+}
 
 type Config struct {
 	DB DB `mapstructure:"database"`
 	// Server Server `mapstructure:"server"`
-	TelegramToken string `mapstructure:"telegram_token"`
+	Telegram Telegram `mapstructure:"telegram"`
 }
 
 func LoadConfig(logger logger.Logger) (*Config, error) {
@@ -79,11 +77,6 @@ func bindEnv() {
 	_ = viper.BindEnv("database.name", "POSTGRES_DB")
 	_ = viper.BindEnv("database.host", "POSTGRES_HOST")
 	_ = viper.BindEnv("database.port", "POSTGRES_PORT")
-
-	// Server
-	// _ = viper.BindEnv("server.host", "SERVER_HOST")
-	// _ = viper.BindEnv("server.port", "SERVER_PORT")
-
 }
 
 func (c *DB) DSN() string {

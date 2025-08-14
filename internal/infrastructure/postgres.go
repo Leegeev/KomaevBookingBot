@@ -9,9 +9,9 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/leegee/KomaevBookingBot/internal/domain"
-	"github.com/leegee/KomaevBookingBot/pkg/config"
-	"github.com/leegee/KomaevBookingBot/pkg/logger"
+	"github.com/leegeev/KomaevBookingBot/internal/domain"
+	"github.com/leegeev/KomaevBookingBot/pkg/config"
+	"github.com/leegeev/KomaevBookingBot/pkg/logger"
 )
 
 // ConnectDBWithRetry подключается к PostgreSQL с указанным количеством повторных попыток.

@@ -9,16 +9,16 @@ import (
 
 // Репозиторий переговорок.
 type RoomRepository interface {
-	GetByID(ctx context.Context, id RoomID) (Room, error)
-	GetByName(ctx context.Context, name string) (Room, error)
+	Create(ctx context.Context, r Room) error
+	Delete(ctx context.Context, id RoomID) error
 	List(ctx context.Context) ([]Room, error)
 }
 
 // Репозиторий пользователей (whitelist).
 type UserRepository interface {
+	Create(ctx context.Context, u User) error
+	Delete(ctx context.Context, userID UserID) error
 	IsWhitelisted(ctx context.Context, userID UserID) (bool, error)
-	Upsert(ctx context.Context, u User) error
-	Deactivate(ctx context.Context, userID UserID) error
 }
 
 // Репозиторий броней.
@@ -38,17 +38,17 @@ type BookingRepository interface {
 	DeleteEndedBefore(ctx context.Context, cutoffUTC time.Time) (int64, error)
 }
 
-// Публикатор доменных событий (можно замокать).
-type EventPublisher interface {
-	Publish(ctx context.Context, ev Event) error
-}
+// // Публикатор доменных событий (можно замокать).
+// type EventPublisher interface {
+// 	Publish(ctx context.Context, ev Event) error
+// }
 
-// Часы для тестируемости.
-type Clock interface {
-	NowUTC() time.Time
-}
+// // Часы для тестируемости.
+// type Clock interface {
+// 	NowUTC() time.Time
+// }
 
-type realClock struct{}
+// type realClock struct{}
 
-func (realClock) NowUTC() time.Time { return time.Now().UTC() }
-func SystemClock() Clock            { return realClock{} }
+// func (realClock) NowUTC() time.Time { return time.Now().UTC() }
+// func SystemClock() Clock            { return realClock{} }
