@@ -15,8 +15,9 @@ type RoomRepository interface {
 }
 
 // Репозиторий пользователей (whitelist).
+// Если getChatMember работает как надо, то можно и не хранить пользователей в БД.
 type UserRepository interface {
-	Create(ctx context.Context, u User) error
+	Add(ctx context.Context, u User) error
 	Delete(ctx context.Context, userID UserID) error
 	IsWhitelisted(ctx context.Context, userID UserID) (bool, error)
 }

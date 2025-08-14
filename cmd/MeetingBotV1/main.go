@@ -8,6 +8,7 @@ import (
 	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram"
 	db "github.com/leegeev/KomaevBookingBot/internal/infrastructure"
 	repository "github.com/leegeev/KomaevBookingBot/internal/repository/postgres"
+	"github.com/leegeev/KomaevBookingBot/internal/usecase"
 	"github.com/leegeev/KomaevBookingBot/pkg/config"
 	"github.com/leegeev/KomaevBookingBot/pkg/logger"
 	"golang.org/x/sync/errgroup"
@@ -24,6 +25,14 @@ Features:
 - Ежедневное уведомление (обновляться должно после каждого изменения в расписании или бронировании)
 - Хранить думаю стоит не больше недели, потом удалять так как избыточная информация
 
+// кнопки
+- /start - приветствие и краткая справка
+- /help - полная справка по командам
+- /book - начать бронирование переговорки
+- /cancel - отменить бронирование
+- /rooms - список переговорок
+- /mybookings - список моих бронирований
+- /admin - админка (только для админов)
 
 TODO:
 bot handlers
@@ -60,13 +69,15 @@ func main() {
 	userRepo := repository.NewUserRepositoryPG(db, logger)
 	bookingRepo := repository.NewBookingRepositoryPG(db, logger)
 
+	service := usecase.NewBookingService(roomRepo, userRepo, bookingRepo, logger)
+
 	// Запуск бота
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
 		logger.Info("Telegram bot starting...")
 		// ВАЖНО: StartBot должен блокировать до ctx.Done() и возвращать ошибку при фатале.
-		if err := telegram.StartBot(ctx, config.Telegram, roomRepo, userRepo, bookingRepo, logger); err != nil {
+		if err := telegram.StartBot(ctx, config.Telegram, service, logger); err != nil {
 			return err
 		}
 		logger.Info("Telegram bot stopped")

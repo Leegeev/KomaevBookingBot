@@ -6,11 +6,12 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	repo "github.com/leegeev/KomaevBookingBot/internal/repository/postgres"
+	"github.com/leegeev/KomaevBookingBot/internal/usecase"
 	"github.com/leegeev/KomaevBookingBot/pkg/config"
+	"github.com/leegeev/KomaevBookingBot/pkg/logger"
 )
 
-func StartBot(ctx context.Context, config config.Telegram, roomRepo repo.RoomRepository, userRepo repo.UserRepository, bookingRepo repo.BookingRepository, logger logger.Logger) error {
+func StartBot(ctx context.Context, config config.Telegram, service *usecase.BookingService, logger logger.Logger) error {
 	bot, err := tgbotapi.NewBotAPI(config.Token)
 	if err != nil {
 		logger.Error("Failed to create Telegram bot", "error", err)
@@ -53,20 +54,20 @@ func StartBot(ctx context.Context, config config.Telegram, roomRepo repo.RoomRep
 
 				switch {
 				case strings.HasPrefix(txt, "/start"):
-					handleStart(ctx, bot, roomRepo, userRepo, bookingRepo, logger, upd.Message)
+					handleStart(ctx, bot, service, logger, upd.Message)
 
 				case strings.HasPrefix(txt, "/book"):
-					handleBooking(ctx, bot, roomRepo, userRepo, bookingRepo, logger, upd.Message)
+					handleBooking(ctx, bot, service, logger, upd.Message)
 
 				case strings.HasPrefix(txt, "/my"):
-					handleMy(ctx, bot, roomRepo, userRepo, bookingRepo, logger, upd.Message)
+					handleMy(ctx, bot, service, logger, upd.Message)
 
 				case strings.HasPrefix(txt, "/cancel"):
-					handleCancel(ctx, bot, roomRepo, userRepo, bookingRepo, logger, upd.Message)
+					handleCancel(ctx, bot, service, logger, upd.Message)
 				}
 
 			} else if upd.CallbackQuery != nil {
-				handleCallback(ctx, bot, roomRepo, userRepo, bookingRepo, logger, upd.CallbackQuery)
+				handleCallback(ctx, bot, service, logger, upd.CallbackQuery)
 			}
 		}
 	}
