@@ -1,6 +1,6 @@
 package repository
 
-const scheduleQuery = `
+const qSchedule = `
 	SELECT
 		r.name,
 		lower(b.time_range AT TIME ZONE 'Europe/Moscow') AS start_local,
@@ -13,4 +13,94 @@ const scheduleQuery = `
 		'[)'
 	)
 	ORDER BY r.name, start_local;
+`
+
+// BOOKING REPOSITORY QUERIES
+
+const qInsertBooking = `
+INSERT INTO bookings (room_id, created_by, time_range, note)
+VALUES ($1, $2, tstzrange($3, $4, '[)'), $5)
+RETURNING id, created_at;
+`
+
+const qDeleteByID = `
+DELETE FROM bookings
+WHERE id = $1;
+`
+
+const qSelectByID = `
+SELECT
+  id,
+  room_id,
+  created_by,
+  lower(time_range) AS start_utc,
+  upper(time_range) AS end_utc,
+  note,
+  created_at
+FROM bookings
+WHERE id = $1;
+`
+
+const qListByRoomAndInterval = `
+SELECT
+  id,
+  room_id,
+  created_by,
+  lower(time_range) AS start_utc,
+  upper(time_range) AS end_utc,
+  note,
+  created_at
+FROM bookings
+WHERE room_id = $1
+  AND time_range && tstzrange($2, $3, '[)')
+ORDER BY lower(time_range) ASC, id ASC;
+`
+
+// future = все, у кого верхняя граница в будущем относительно fromUTC
+const qListFutureByUser = `
+SELECT
+  id,
+  room_id,
+  created_by,
+  lower(time_range) AS start_utc,
+  upper(time_range) AS end_utc,
+  note,
+  created_at
+FROM bookings
+WHERE created_by = $1
+  AND upper(time_range) > $2
+ORDER BY lower(time_range) ASC, id ASC;
+`
+
+const qAnyOverlap = `
+SELECT EXISTS (
+  SELECT 1
+  FROM bookings
+  WHERE room_id = $1
+    AND time_range && tstzrange($2, $3, '[)')
+) AS overlap;
+`
+
+const qDeleteEndedBefore = `
+DELETE FROM bookings
+WHERE upper(time_range) < $1;
+`
+
+// ROOM REPOSITORY QUERIES
+
+const qInsertRoom = `
+INSERT INTO rooms (name)
+VALUES ($1)
+RETURNING id;
+`
+
+const qDeleteRoom = `
+DELETE FROM rooms
+WHERE id = $1;
+`
+
+const qListRooms = `
+SELECT id, name
+FROM rooms
+ORDER BY id;
 `

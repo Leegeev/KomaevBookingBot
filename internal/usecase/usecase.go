@@ -29,10 +29,6 @@ func (s *BookingService) CancelBooking(bookingID int64) error {
 	return nil
 }
 
-func (s *BookingService) AdminCancelBooking(bookingID int64) error {
-	return nil
-}
-
 func (s *BookingService) ListUserBookings(userID int64) ([]domain.Booking, error) {
 	return nil, nil
 }
@@ -43,6 +39,10 @@ func (s *BookingService) ListRoomBookings(roomID int64) ([]domain.Booking, error
 
 func (s *BookingService) ListRooms() ([]domain.Room, error) {
 	return nil, nil
+}
+
+func (s *BookingService) AdminCancelBooking(bookingID int64) error {
+	return nil
 }
 
 func (s *BookingService) AdminCreateRoom(room domain.Room) error {
