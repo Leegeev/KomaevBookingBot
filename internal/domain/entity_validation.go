@@ -5,16 +5,15 @@ import "time"
 func (u User) Valid() bool { return u.ID != 0 }
 func (r Room) Valid() bool { return r.ID != 0 && r.Name != "" }
 
-func NewBooking(roomID RoomID, createdBy UserID, tr TimeRange, note string, nowUTC time.Time) (Booking, error) {
-	if roomID == 0 || createdBy == 0 || tr.IsZero() {
-		return Booking{}, ErrInvalidTimeRange
+func NewBooking(roomID RoomID, createdBy UserID, tr TimeRange, note string) (Booking, error) {
+	if roomID == 0 || createdBy == 0 {
+		return Booking{}, ErrInvalidInputData
 	}
 	return Booking{
 		RoomID:    roomID,
 		CreatedBy: createdBy,
 		Range:     tr,
 		Note:      note,
-		CreatedAt: MustUTC(nowUTC),
 	}, nil
 }
 
@@ -29,7 +28,7 @@ func MustUTC(t time.Time) time.Time {
 func NewTimeRange(startUTC, endUTC time.Time) (TimeRange, error) {
 	s := MustUTC(startUTC)
 	e := MustUTC(endUTC)
-	if !e.After(s) {
+	if !e.After(s) || e.Equal(s) || s.IsZero() || e.IsZero() {
 		return TimeRange{}, ErrInvalidTimeRange
 	}
 	return TimeRange{Start: s, End: e}, nil

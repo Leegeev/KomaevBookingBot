@@ -33,7 +33,7 @@ func NewBookingRepositoryPG(db *sqlx.DB, logger logger.Logger) *bookingRepositor
 
 // methods
 
-func (r *bookingRepositoryPG) Create(ctx context.Context, b *domain.Booking) error {
+func (r *bookingRepositoryPG) Create(ctx context.Context, b domain.Booking) error {
 	start := b.Range.Start // если у тебя Range: заменяй на b.Range.Start
 	end := b.Range.End     // если у тебя Range: заменяй на b.Range.End
 
@@ -56,7 +56,6 @@ func (r *bookingRepositoryPG) Create(ctx context.Context, b *domain.Booking) err
 	}
 
 	b.ID = domain.BookingID(newID)
-	b.CreatedAt = createdAt.UTC()
 	return nil
 }
 
@@ -97,9 +96,9 @@ func (r *bookingRepositoryPG) ListByRoomAndInterval(ctx context.Context, roomID 
 	return out, nil
 }
 
-func (r *bookingRepositoryPG) ListFutureByUser(ctx context.Context, userID domain.UserID, fromUTC time.Time) ([]domain.Booking, error) {
+func (r *bookingRepositoryPG) ListByUser(ctx context.Context, userID domain.UserID, fromUTC time.Time) ([]domain.Booking, error) {
 	var rows []bookingRow
-	if err := r.db.SelectContext(ctx, &rows, qListFutureByUser, int64(userID), fromUTC); err != nil {
+	if err := r.db.SelectContext(ctx, &rows, qListByUser, int64(userID), fromUTC); err != nil {
 		return nil, err
 	}
 	out := make([]domain.Booking, 0, len(rows))
@@ -143,7 +142,7 @@ func bookingRowToDomain(br bookingRow) (domain.Booking, error) {
 		CreatedBy: domain.UserID(br.CreatedBy),
 		Range:     tr,
 		Note:      br.Note,
-		CreatedAt: br.CreatedAt.UTC(),
+		// CreatedAt: br.CreatedAt.UTC(),
 	}, nil
 }
 

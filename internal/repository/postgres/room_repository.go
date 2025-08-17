@@ -28,10 +28,6 @@ type roomRow struct {
 // methods
 
 func (r *roomRepositoryPG) Create(ctx context.Context, room domain.Room) (domain.RoomID, error) {
-	if room.Name == "" {
-		return 0, fmt.Errorf("room name is empty")
-	}
-
 	// Хотим убедиться, что вставка прошла — читаем id, но наружу его не вернуть (сигнатура Create не позволяет)
 	var newID int64
 	if err := r.db.QueryRowxContext(ctx, qInsertRoom, room.Name).Scan(&newID); err != nil {
@@ -43,7 +39,7 @@ func (r *roomRepositoryPG) Create(ctx context.Context, room domain.Room) (domain
 }
 
 func (r *roomRepositoryPG) Delete(ctx context.Context, id domain.RoomID) error {
-	res, err := r.db.ExecContext(ctx, qDeleteRoom, int64(id))
+	res, err := r.db.ExecContext(ctx, qDeactivateRoom, int64(id))
 	if err != nil {
 		return err
 	}
@@ -64,7 +60,7 @@ func (r *roomRepositoryPG) Delete(ctx context.Context, id domain.RoomID) error {
 
 func (r *roomRepositoryPG) List(ctx context.Context) ([]domain.Room, error) {
 	var rows []roomRow
-	if err := r.db.SelectContext(ctx, &rows, qListRooms); err != nil {
+	if err := r.db.SelectContext(ctx, &rows, qListActiveRooms); err != nil {
 		return nil, err
 	}
 	rooms := make([]domain.Room, 0, len(rows))

@@ -2,8 +2,9 @@
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE TABLE rooms (
-  id          SERIAL PRIMARY KEY,
-  name        TEXT UNIQUE NOT NULL  -- 'Переговорка 1', 'Переговорка 2'
+  id         SERIAL PRIMARY KEY,
+  name       TEXT UNIQUE NOT NULL,         -- 'Переговорка 1', 'Переговорка 2'
+  is_active  BOOLEAN NOT NULL DEFAULT TRUE -- активна для бронирования
 );
 
 -- CREATE TABLE users_whitelist (

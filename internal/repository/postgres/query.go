@@ -20,7 +20,7 @@ const qSchedule = `
 const qInsertBooking = `
 INSERT INTO bookings (room_id, created_by, time_range, note)
 VALUES ($1, $2, tstzrange($3, $4, '[)'), $5)
-RETURNING id, created_at;
+RETURNING id;
 `
 
 const qDeleteByID = `
@@ -57,7 +57,7 @@ ORDER BY lower(time_range) ASC, id ASC;
 `
 
 // future = все, у кого верхняя граница в будущем относительно fromUTC
-const qListFutureByUser = `
+const qListByUser = `
 SELECT
   id,
   room_id,
@@ -94,13 +94,17 @@ VALUES ($1)
 RETURNING id;
 `
 
-const qDeleteRoom = `
-DELETE FROM rooms
+// "Удаление" = деактивация (идемпотентно: активную делаем неактивной)
+const qDeactivateRoom = `
+UPDATE rooms
+SET is_active = FALSE
 WHERE id = $1;
 `
 
-const qListRooms = `
+// Список ТОЛЬКО активных
+const qListActiveRooms = `
 SELECT id, name
 FROM rooms
+WHERE is_active = TRUE
 ORDER BY id;
 `

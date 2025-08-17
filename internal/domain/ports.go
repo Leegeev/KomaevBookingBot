@@ -17,14 +17,15 @@ type RoomRepository interface {
 // Репозиторий броней.
 type BookingRepository interface {
 	// CRUD операции.
-	Create(ctx context.Context, b *Booking) error
-	Cancel(ctx context.Context, id BookingID) error
+	Create(ctx context.Context, b Booking) error
+	Delete(ctx context.Context, id BookingID) error
 	// GetByID(ctx context.Context, id BookingID) (Booking, error)
 
 	// Для отображения и проверок
 	ListByRoomAndInterval(ctx context.Context, roomID RoomID, fromUTC, toUTC time.Time) ([]Booking, error)
 	ListByUser(ctx context.Context, userID UserID, fromUTC time.Time) ([]Booking, error)
-	ListByRoom(ctx context.Context, roomID RoomID, fromUTC time.Time) ([]Booking, error)
+
+	// ListByRoom(ctx context.Context, roomID RoomID, fromUTC time.Time) ([]Booking, error)
 
 	// Additional
 	// Быстрая проверка пересечений до вставки (опционально; БД всё равно гарантирует).

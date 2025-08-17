@@ -38,6 +38,26 @@ TODO:
 bot handlers
 usecase service
 repository implementation
+
+при отмене бронирования, в тг сообщении нужно в каждую выданную бронь (которую можно отменить) вложить айди брони
+
+валидация:
+delivery : проверка, что данные есть и они в корректном формате, а пользователь авторизован
+usecase : проверка, что комната существует, что время корректное, что нет пересечений
+repository : проверка, что комната активна (если нужно), что нет пересечений в базе
+
+delivery только парсит и переводит в UTC;
+usecase создает/валидирует через домен;
+repo хранит, БД окончательно защищает (EXCLUDE).
+
+готово:
+
+комнату лучше не удалять, а просто выключать доступ к ней
+зачем? чтобы не терять историю бронирований
+- для этого в Room добавить поле Active bool
+- при создании брони проверять, что комната активна
+- при получении списка комнат, фильтровать по Active
+
 */
 
 func main() {
@@ -66,10 +86,10 @@ func main() {
 
 	// Инициализация репозиториев
 	roomRepo := repository.NewRoomRepositoryPG(db, logger)
-	userRepo := repository.NewUserRepositoryPG(db, logger)
+	// userRepo := repository.NewUserRepositoryPG(db, logger)
 	bookingRepo := repository.NewBookingRepositoryPG(db, logger)
 
-	service := usecase.NewBookingService(roomRepo, userRepo, bookingRepo, logger)
+	service := usecase.NewBookingService(roomRepo, bookingRepo, logger)
 
 	// Запуск бота
 	g, ctx := errgroup.WithContext(ctx)

@@ -35,6 +35,4 @@ type Booking struct {
 	CreatedBy UserID
 	Range     TimeRange // [start, end) UTC
 	Note      string
-
-	CreatedAt time.Time // UTC
 }

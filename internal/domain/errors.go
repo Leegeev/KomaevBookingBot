@@ -16,4 +16,6 @@ var (
 	ErrOverlapsExisting      = errors.New("booking overlaps existing booking")
 	ErrForbiddenCancellation = errors.New("user cannot cancel this booking")
 	ErrDBConnectionFailed    = errors.New("failed to connect to database")
+	ErrInvalidInputData      = errors.New("invalid input data")
+	ErrNoRoomsAvailable      = errors.New("no rooms available")
 )
