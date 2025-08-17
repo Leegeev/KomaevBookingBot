@@ -20,7 +20,8 @@ type BookingRepository interface {
 	// CRUD операции.
 	Create(ctx context.Context, b Booking) error
 	Delete(ctx context.Context, id BookingID) error
-	// GetByID(ctx context.Context, id BookingID) (Booking, error)
+	// Get(ctx context.Context, id BookingID) (Booking, error)
+	GetByID(ctx context.Context, id BookingID) (Booking, error)
 
 	// Для отображения и проверок
 	ListByRoomAndInterval(ctx context.Context, roomID RoomID, fromUTC, toUTC time.Time) ([]Booking, error)

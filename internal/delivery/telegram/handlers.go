@@ -85,8 +85,9 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 	for _, bk := range bookings {
 		start := bk.Range.Start.In(h.cfg.OfficeTZ) // если у тебя bk.Interval — замени
 		end := bk.Range.End.In(h.cfg.OfficeTZ)
+		roomInfo, _ := h.uc.GetRoom(ctx, int64(bk.RoomID))
 		fmt.Fprintf(&b, "• #%d — %s %02d:%02d–%02d:%02d\n",
-			bk.ID, start.Format("2006-01-02"), start.Hour(), start.Minute(), end.Hour(), end.Minute())
+			roomInfo.Name, start.Format("2006-01-02"), start.Hour(), start.Minute(), end.Hour(), end.Minute())
 
 		cb := tgbotapi.NewInlineKeyboardButtonData("Отменить", fmt.Sprintf("c:%d", bk.ID))
 		kbRows = append(kbRows, tgbotapi.NewInlineKeyboardRow(cb))
@@ -112,15 +113,21 @@ func (h *Handler) handleCancelCommand(ctx context.Context, msg *tgbotapi.Message
 	}
 
 	// Админ может отменять любые брони, обычный — свои (в текущем упрощённом сервисе — без проверки владельца).
+	ok, err := h.uc.CheckBookingAndUserID(ctx, id, msg.From.ID)
+	if err != nil {
+		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
+		return
+	}
+	if !ok && !h.isAdmin(ctx, int64(msg.From.ID)) {
+		h.reply(msg.Chat.ID, "Недостаточно прав для отмены этой брони.")
+		return
+	}
+	// Он либо админ, либо владелец брони, так что можно отменять.
 	if err := h.uc.CancelBooking(ctx, id); err != nil {
 		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
 		return
 	}
-	if h.isAdmin(ctx, int64(msg.From.ID)) {
-		h.reply(msg.Chat.ID, "Бронь отменена администратором.")
-	} else {
-		h.reply(msg.Chat.ID, "Бронь отменена.")
-	}
+	h.reply(msg.Chat.ID, "Бронь отменена.")
 }
 
 /* ---------- /book ---------- */

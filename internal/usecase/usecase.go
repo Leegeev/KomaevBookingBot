@@ -71,6 +71,21 @@ func (s *BookingService) CancelBooking(ctx context.Context, bookingID int64) err
 	return nil
 }
 
+func (s *BookingService) CheckBookingAndUserID(ctx context.Context, bookingID, userID int64) (bool, error) {
+	s.logger.Info("Checking if it is his booking")
+	booking, err := s.bookingRepo.GetByID(ctx, domain.BookingID(bookingID))
+	if err != nil {
+		s.logger.Error("Failed to get booking", "error", err)
+		return false, err
+	}
+	if booking.CreatedBy != domain.UserID(userID) {
+		s.logger.Warn("User does not own this booking", "userID", userID, "bookingID", bookingID)
+		return false, domain.ErrNotOwner
+	}
+	s.logger.Info("User owns the booking", "userID", userID, "bookingID", bookingID)
+	return true, nil
+}
+
 func (s *BookingService) ListUserBookings(ctx context.Context, userID int64) ([]domain.Booking, error) {
 	s.logger.Info("Listing bookings for user", "userID", userID)
 	if userID <= 0 {

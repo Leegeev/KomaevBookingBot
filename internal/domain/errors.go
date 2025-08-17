@@ -18,4 +18,5 @@ var (
 	ErrDBConnectionFailed    = errors.New("failed to connect to database")
 	ErrInvalidInputData      = errors.New("invalid input data")
 	ErrNoRoomsAvailable      = errors.New("no rooms available")
+	ErrNotOwner              = errors.New("user does not own this booking")
 )
