@@ -3,10 +3,10 @@
 ########################
 # Build stage
 ########################
-FROM golang:1.22.3-alpine3.20 AS builder
+FROM golang:1.23-alpine3.20 AS builder
 
 WORKDIR /src
-RUN apk update && apk add --no-cache git
+RUN apk update && apk upgrade && apk add --no-cache git
 
 # Сначала зависимости — чтобы кешировать
 COPY go.mod go.sum ./
@@ -27,7 +27,7 @@ RUN CGO_ENABLED=0 GOOS=linux \
 FROM alpine:3.20
 
 # tzdata нужно, чтобы time.LoadLocation("Europe/Moscow") работал корректно
-RUN apk update && apk add --no-cache ca-certificates tzdata && \
+RUN apk update && apk upgrade && apk add --no-cache ca-certificates tzdata && \
     adduser -D -H -s /sbin/nologin appuser
 
 # ВАЖНО: работаем из /src — туда смотрит твой загрузчик config.yaml (через runtime.Caller)

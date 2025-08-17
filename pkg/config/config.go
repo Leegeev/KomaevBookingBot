@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -23,9 +24,10 @@ type DB struct {
 }
 
 type Telegram struct {
-	Token       string         `mapstructure:"token"`
-	OfficeTZ    *time.Location `mapstructure:"office_tz"`
-	GroupChatID int64          `mapstructure:"group_chat_id"` // ID группы для проверки админства
+	Token       string `mapstructure:"token"`
+	OfficeTZ    *time.Location
+	tzinString  string `mapstructure:"office_tz"`
+	GroupChatID int64  `mapstructure:"group_chat_id"` // ID группы для проверки админства
 }
 
 type Config struct {
@@ -33,38 +35,49 @@ type Config struct {
 	Telegram Telegram `mapstructure:"telegram"`
 }
 
+// pkg/config/config.go
 func LoadConfig(logger logger.Logger) (*Config, error) {
-	// Загрузка переменных окружения из .env
-	if err := godotenv.Load(); err != nil {
-		logger.Error("Failed to load .env file, using default environment variables")
-	}
+	// .env опционален — если нет файла, просто логируем и продолжаем
+	_ = godotenv.Load()
 
-	// Поиск файла конфигурации config.yaml
-	_, b, _, _ := runtime.Caller(0)
-	basePath := filepath.Join(filepath.Dir(b), "../../")
-	viper.AddConfigPath(basePath)
-	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 
-	// Подключение переменных окружения
+	// 1) Явный путь из окружения
+	if p := os.Getenv("CONFIG_PATH"); p != "" {
+		viper.SetConfigFile(p)
+	} else {
+		viper.AddConfigPath(".")    // текущая рабочая директория
+		viper.AddConfigPath("/src") // твой WORKDIR в Docker
+		if _, b, _, ok := runtime.Caller(0); ok && filepath.IsAbs(b) {
+			basePath := filepath.Join(filepath.Dir(b), "../../")
+			viper.AddConfigPath(basePath)
+			logger.Info("Using config file from base path", "path", basePath)
+		}
+		viper.SetConfigName("config")
+	}
+
 	viper.AutomaticEnv()
 	viper.AllowEmptyEnv(true)
-
-	// Привязка переменных окружения к ключам
 	bindEnv()
 
-	// Чтение и парсинг YAML
 	if err := viper.ReadInConfig(); err != nil {
 		logger.Error("Error reading config.yaml", "error", err)
 		return nil, fmt.Errorf("ошибка чтения config.yaml: %w", err)
 	}
-
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		logger.Error("Error unmarshalling config", "error", err)
 		return nil, fmt.Errorf("ошибка декодирования config: %w", err)
 	}
-
+	locStr := cfg.Telegram.tzinString
+	if locStr != "" {
+		loc, err := time.LoadLocation(locStr)
+		if err != nil {
+			logger.Error("не удалось загрузить часовой пояс", "error", err)
+			return nil, fmt.Errorf("не удалось загрузить часовой пояс: %w", err)
+		}
+		cfg.Telegram.OfficeTZ = loc
+	}
 	return &cfg, nil
 }
 
@@ -79,7 +92,7 @@ func bindEnv() {
 
 	// Telegram
 	_ = viper.BindEnv("telegram.token", "TELEGRAM_TOKEN")
-	_ = viper.BindEnv("telegram.office_tz", "TELEGRAM_OFFICE_TZ")
+	_ = viper.BindEnv("telegram.tzinString", "TELEGRAM_OFFICE_TZ")
 	_ = viper.BindEnv("telegram.group_chat_id", "TELEGRAM_GROUP_CHAT_ID")
 
 }

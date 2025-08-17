@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: bookingbot-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app-network
+
+  app:
+    build:
+      context: .                                # корень репозитория
+      dockerfile: ./cmd/MeetingBotV1/Dockerfile   # путь к Dockerfile
+    container_name: bookingbot-app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env                                    # TELEGRAM_TOKEN, TELEGRAM_GROUP_CHAT_ID и пр.
+    environment:
+      CONFIG_PATH: /app/config.yaml
+    
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    stop_signal: SIGINT
+    stop_grace_period: 10s
+    networks:
+      - app-network
+      # - ./.env:/src/.env:ro
+    # restart: unless-stopped
+    # Для long polling порты наружу не нужны.
+    # Если перейдёшь на webhook/HTTP health, раскомментируй:
+    # ports:
+    #   - "8080:8080"
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -10,5 +10,5 @@ database:
 
 telegram:
   token: ""
-  office_tz: "Europe/Moscow"
-  group_chat_id: 1234567890 # Replace with your actual group chat ID
+  office_tz: ""
+  group_chat_id: ""
