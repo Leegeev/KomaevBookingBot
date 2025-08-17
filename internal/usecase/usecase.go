@@ -77,7 +77,7 @@ func (s *BookingService) ListUserBookings(ctx context.Context, userID int64) ([]
 		s.logger.Error("Invalid user ID", "userID", userID)
 		return nil, domain.ErrInvalidInputData
 	}
-	bookings, err := s.bookingRepo.ListByUser(ctx, domain.UserID(userID), time.Now())
+	bookings, err := s.bookingRepo.ListByUser(ctx, domain.UserID(userID), domain.MustUTC(time.Now().UTC()))
 	if err != nil {
 		s.logger.Error("Failed to list user bookings", "error", err)
 		return nil, err
@@ -92,7 +92,7 @@ func (s *BookingService) ListRoomBookings(ctx context.Context, roomID int64) ([]
 		s.logger.Error("Invalid room ID", "roomID", roomID)
 		return nil, domain.ErrInvalidInputData
 	}
-	bookings, err := s.bookingRepo.ListByRoomAndInterval(ctx, domain.RoomID(roomID), time.Now(), time.Now().Add(time.Hour*24*7))
+	bookings, err := s.bookingRepo.ListByRoomAndInterval(ctx, domain.RoomID(roomID), time.Now().UTC(), time.Now().UTC().Add(time.Hour*24*7))
 	if err != nil {
 		s.logger.Error("Failed to list room bookings", "error", err)
 		return nil, err

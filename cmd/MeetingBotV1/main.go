@@ -29,10 +29,11 @@ Features:
 - /start - приветствие и краткая справка
 - /help - полная справка по командам
 - /book - начать бронирование переговорки
-- /cancel - отменить бронирование
+- /cancel - отменить свое бронирование (если в беседе у пользователя роль администратора или создателя, он может отменять и чужие брони)
 - /rooms - список переговорок
-- /mybookings - список моих бронирований
-- /admin - админка (только для админов)
+- /my - список моих бронирований
+- /create_room
+- /deactivate_room
 
 TODO:
 bot handlers
@@ -86,26 +87,38 @@ func main() {
 
 	// Инициализация репозиториев
 	roomRepo := repository.NewRoomRepositoryPG(db, logger)
-	// userRepo := repository.NewUserRepositoryPG(db, logger)
 	bookingRepo := repository.NewBookingRepositoryPG(db, logger)
 
 	service := usecase.NewBookingService(roomRepo, bookingRepo, logger)
 
-	// Запуск бота
-	g, ctx := errgroup.WithContext(ctx)
+	/*
+		// Запуск бота
+		g, ctx := errgroup.WithContext(ctx)
 
-	g.Go(func() error {
-		logger.Info("Telegram bot starting...")
-		// ВАЖНО: StartBot должен блокировать до ctx.Done() и возвращать ошибку при фатале.
-		if err := telegram.StartBot(ctx, config.Telegram, service, logger); err != nil {
-			return err
+		g.Go(func() error {
+			logger.Info("Telegram bot starting...")
+			// ВАЖНО: StartBot должен блокировать до ctx.Done() и возвращать ошибку при фатале.
+			if err := telegram.StartBot(ctx, config.Telegram, service, logger); err != nil {
+				return err
+			}
+			logger.Info("Telegram bot stopped")
+			return nil
+		})
+		if err := g.Wait(); err != nil {
+			logger.Error("Service stopped with error", "error", err)
+			os.Exit(1)
 		}
-		logger.Info("Telegram bot stopped")
-		return nil
-	})
-	if err := g.Wait(); err != nil {
-		logger.Error("Service stopped with error", "error", err)
-		os.Exit(1)
+	*/
+
+	bot, _ := tgbotapi.NewBotAPI(cfg.Telegram.Token)
+	h := telegram.NewHandler(bot, telegram.Config{
+		Token:       cfg.Telegram.Token,
+		GroupChatID: cfg.Telegram.GroupChatID,
+		OfficeTZ:    mustLoad("Europe/Moscow"), // или из конфига
+	}, log, bookingUC)
+
+	if err := h.RunPolling(ctx); err != nil {
+		log.Error("bot stopped", "error", err)
 	}
 
 	logger.Info("Service exited cleanly")
