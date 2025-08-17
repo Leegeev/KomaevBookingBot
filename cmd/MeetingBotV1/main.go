@@ -28,6 +28,10 @@ Features:
 - Хранить думаю стоит не больше недели, потом удалять так как избыточная информация
 
 // кнопки
+/schedule - показать расписание на сегодня
+
+готово:
+
 - /start - приветствие и краткая справка
 - /help - полная справка по командам
 - /book - начать бронирование переговорки
@@ -52,8 +56,6 @@ repository : проверка, что комната активна (если н
 delivery только парсит и переводит в UTC;
 usecase создает/валидирует через домен;
 repo хранит, БД окончательно защищает (EXCLUDE).
-
-готово:
 
 комнату лучше не удалять, а просто выключать доступ к ней
 зачем? чтобы не терять историю бронирований
@@ -113,13 +115,7 @@ func main() {
 	*/
 
 	bot, _ := tgbotapi.NewBotAPI(config.Telegram.Token)
-
-	h := telegram.NewHandler(bot, telegram.Config{
-		Token:       config.Telegram.Token,
-		GroupChatID: config.Telegram.GroupChatID,
-		OfficeTZ:    config.Telegram.OfficeTZ, // или из конфига
-	}, logger, service)
-
+	h := telegram.NewHandler(bot, config.Telegram, logger, service)
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {

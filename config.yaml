@@ -1,0 +1,14 @@
+database:
+  user: ""
+  password: ""
+  name: ""
+  host: ""
+  port: ""
+  sslmode: "disable"
+  retry_count: 5
+  retry_delay: 2s
+
+telegram:
+  token: ""
+  office_tz: "Europe/Moscow"
+  group_chat_id: 1234567890 # Replace with your actual group chat ID

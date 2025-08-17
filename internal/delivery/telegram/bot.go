@@ -12,26 +12,20 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/leegeev/KomaevBookingBot/internal/usecase"
+	"github.com/leegeev/KomaevBookingBot/pkg/config"
 	"github.com/leegeev/KomaevBookingBot/pkg/logger"
 )
-
-// Конфиг Telegram-адаптера
-type Config struct {
-	Token       string
-	GroupChatID int64          // id вашей группы для проверки админства
-	OfficeTZ    *time.Location // локальная TZ офиса
-}
 
 // Основной хэндлер
 type Handler struct {
 	bot      *tgbotapi.BotAPI
-	cfg      Config
+	cfg      config.Telegram
 	log      logger.Logger
 	uc       *usecase.BookingService
 	bookSess map[int64]*bookingSession // userID -> сессия бронирования
 }
 
-func NewHandler(bot *tgbotapi.BotAPI, cfg Config, log logger.Logger, uc *usecase.BookingService) *Handler {
+func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc *usecase.BookingService) *Handler {
 	return &Handler{
 		bot:      bot,
 		cfg:      cfg,
@@ -67,13 +61,6 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 	}
 }
 
-// Удобный запуск с сигнальным контекстом (если хочешь напрямую из main)
-func (h *Handler) Run() error {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-	return h.RunPolling(ctx)
-}
-
 func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -103,6 +90,9 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 				h.handleCreateRoom(ctx, msg)
 			case "deactivate_room":
 				h.handleDeactivateRoom(ctx, msg)
+			// TODO:
+			// case "schedule":
+			// h.handleSchedule(ctx, msg)
 			default:
 				h.reply(msg.Chat.ID, "Неизвестная команда. Смотри /help")
 			}

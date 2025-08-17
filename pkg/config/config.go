@@ -26,12 +26,10 @@ type Telegram struct {
 	Token       string         `mapstructure:"token"`
 	OfficeTZ    *time.Location `mapstructure:"office_tz"`
 	GroupChatID int64          `mapstructure:"group_chat_id"` // ID группы для проверки админства
-	// BotUsername string `mapstructure:"bot_username"` // если нужно, можно добавить
 }
 
 type Config struct {
-	DB DB `mapstructure:"database"`
-	// Server Server `mapstructure:"server"`
+	DB       DB       `mapstructure:"database"`
 	Telegram Telegram `mapstructure:"telegram"`
 }
 
@@ -78,6 +76,12 @@ func bindEnv() {
 	_ = viper.BindEnv("database.name", "POSTGRES_DB")
 	_ = viper.BindEnv("database.host", "POSTGRES_HOST")
 	_ = viper.BindEnv("database.port", "POSTGRES_PORT")
+
+	// Telegram
+	_ = viper.BindEnv("telegram.token", "TELEGRAM_TOKEN")
+	_ = viper.BindEnv("telegram.office_tz", "TELEGRAM_OFFICE_TZ")
+	_ = viper.BindEnv("telegram.group_chat_id", "TELEGRAM_GROUP_CHAT_ID")
+
 }
 
 func (c *DB) DSN() string {
