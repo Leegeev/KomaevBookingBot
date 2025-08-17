@@ -5,12 +5,14 @@ import (
 	"syscall"
 	"time"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram"
 	db "github.com/leegeev/KomaevBookingBot/internal/infrastructure"
 	repository "github.com/leegeev/KomaevBookingBot/internal/repository/postgres"
 	"github.com/leegeev/KomaevBookingBot/internal/usecase"
 	"github.com/leegeev/KomaevBookingBot/pkg/config"
 	"github.com/leegeev/KomaevBookingBot/pkg/logger"
+
 	"golang.org/x/sync/errgroup"
 
 	"context"
@@ -110,15 +112,27 @@ func main() {
 		}
 	*/
 
-	bot, _ := tgbotapi.NewBotAPI(cfg.Telegram.Token)
-	h := telegram.NewHandler(bot, telegram.Config{
-		Token:       cfg.Telegram.Token,
-		GroupChatID: cfg.Telegram.GroupChatID,
-		OfficeTZ:    mustLoad("Europe/Moscow"), // или из конфига
-	}, log, bookingUC)
+	bot, _ := tgbotapi.NewBotAPI(config.Telegram.Token)
 
-	if err := h.RunPolling(ctx); err != nil {
-		log.Error("bot stopped", "error", err)
+	h := telegram.NewHandler(bot, telegram.Config{
+		Token:       config.Telegram.Token,
+		GroupChatID: config.Telegram.GroupChatID,
+		OfficeTZ:    config.Telegram.OfficeTZ, // или из конфига
+	}, logger, service)
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		logger.Info("Telegram bot starting...")
+		// ВАЖНО: StartBot должен блокировать до ctx.Done() и возвращать ошибку при фатале.
+		if err := h.RunPolling(ctx); err != nil {
+			logger.Error("bot stopped", "error", err)
+		}
+		logger.Info("Telegram bot stopped")
+		return nil
+	})
+	if err := g.Wait(); err != nil {
+		logger.Error("Service stopped with error", "error", err)
 	}
 
 	logger.Info("Service exited cleanly")

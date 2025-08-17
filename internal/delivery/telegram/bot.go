@@ -3,45 +3,46 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
-	"github.com/leegeev/KomaevBookingBot/internal/domain"
 	"github.com/leegeev/KomaevBookingBot/internal/usecase"
 	"github.com/leegeev/KomaevBookingBot/pkg/logger"
 )
 
+// Конфиг Telegram-адаптера
 type Config struct {
 	Token       string
-	GroupChatID int64          // id вашей беседы для проверок админства
+	GroupChatID int64          // id вашей группы для проверки админства
 	OfficeTZ    *time.Location // локальная TZ офиса
 }
 
+// Основной хэндлер
 type Handler struct {
-	bot *tgbotapi.BotAPI
-	cfg Config
-	log logger.Logger
-	uc  *usecase.BookingService
-
-	// очень простой state для /book: userID -> выбранная комната
-	pending map[int64]domain.RoomID
+	bot      *tgbotapi.BotAPI
+	cfg      Config
+	log      logger.Logger
+	uc       *usecase.BookingService
+	bookSess map[int64]*bookingSession // userID -> сессия бронирования
 }
 
 func NewHandler(bot *tgbotapi.BotAPI, cfg Config, log logger.Logger, uc *usecase.BookingService) *Handler {
 	return &Handler{
-		bot:     bot,
-		cfg:     cfg,
-		log:     log,
-		uc:      uc,
-		pending: make(map[int64]domain.RoomID),
+		bot:      bot,
+		cfg:      cfg,
+		log:      log,
+		uc:       uc,
+		bookSess: make(map[int64]*bookingSession),
 	}
 }
 
-// RunPolling — блокирует до ctx.Done().
+// Запуск long-polling. Блокирует до ctx.Done().
 func (h *Handler) RunPolling(ctx context.Context) error {
-	// sanity check токена/сети
 	if _, err := h.bot.GetMe(); err != nil {
 		return fmt.Errorf("getMe: %w", err)
 	}
@@ -66,22 +67,24 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 	}
 }
 
+// Удобный запуск с сигнальным контекстом (если хочешь напрямую из main)
+func (h *Handler) Run() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	return h.RunPolling(ctx)
+}
+
 func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
-	defer func() { // защита от паники, чтобы бот не умер
+	defer func() {
 		if r := recover(); r != nil {
-			h.log.Error("panic in handler", "panic", r)
+			h.log.Error("panic in telegram handler", "panic", r)
 		}
 	}()
 
 	if upd.Message != nil {
 		msg := upd.Message
 
-		// если пользователь в процессе /book и прислал текст со временем — обработаем
-		if !msg.IsCommand() && h.hasPending(msg.From.ID) {
-			h.handleBookTime(ctx, msg)
-			return
-		}
-
+		// если в процессе /book — текст не обрабатываем (у нас кнопки)
 		if msg.IsCommand() {
 			switch msg.Command() {
 			case "start":
@@ -101,14 +104,13 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 			case "deactivate_room":
 				h.handleDeactivateRoom(ctx, msg)
 			default:
-				h.reply(msg.Chat.ID, "Неизвестная команда. Посмотри /help")
+				h.reply(msg.Chat.ID, "Неизвестная команда. Смотри /help")
 			}
 			return
 		}
 
-		// обычный текст вне сценария
 		if strings.TrimSpace(msg.Text) != "" {
-			h.reply(msg.Chat.ID, "Не понял. Посмотри /help")
+			h.reply(msg.Chat.ID, "Не понял. Смотри /help")
 		}
 		return
 	}
@@ -119,7 +121,7 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	}
 }
 
-/* ---------- small helpers ---------- */
+/* ------------ helpers ------------ */
 
 func (h *Handler) reply(chatID int64, text string) {
 	m := tgbotapi.NewMessage(chatID, text)
@@ -128,12 +130,14 @@ func (h *Handler) reply(chatID int64, text string) {
 }
 
 func (h *Handler) isAdmin(ctx context.Context, userID int64) bool {
-	// если нет группы — считаем всех не-админами
 	if h.cfg.GroupChatID == 0 {
 		return false
 	}
-	m, err := h.bot.GetChatMember(tgbotapi.ChatConfigWithUser{
-		ChatID: h.cfg.GroupChatID, UserID: userID,
+	m, err := h.bot.GetChatMember(tgbotapi.GetChatMemberConfig{
+		ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
+			ChatID: h.cfg.GroupChatID,
+			UserID: userID,
+		},
 	})
 	if err != nil {
 		h.log.Error("GetChatMember failed", "error", err)
@@ -141,8 +145,6 @@ func (h *Handler) isAdmin(ctx context.Context, userID int64) bool {
 	}
 	return m.Status == "creator" || m.Status == "administrator"
 }
-
-func (h *Handler) hasPending(userID int64) bool { _, ok := h.pending[userID]; ok = ok; return ok }
 
 // package telegram
 

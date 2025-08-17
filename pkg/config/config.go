@@ -23,8 +23,9 @@ type DB struct {
 }
 
 type Telegram struct {
-	Token    string         `mapstructure:"token"`
-	OfficeTZ *time.Location `mapstructure:"office_tz"`
+	Token       string         `mapstructure:"token"`
+	OfficeTZ    *time.Location `mapstructure:"office_tz"`
+	GroupChatID int64          `mapstructure:"group_chat_id"` // ID группы для проверки админства
 	// BotUsername string `mapstructure:"bot_username"` // если нужно, можно добавить
 }
 
