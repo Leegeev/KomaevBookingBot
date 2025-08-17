@@ -116,6 +116,22 @@ func (s *BookingService) ListRooms(ctx context.Context) ([]domain.Room, error) {
 	return rooms, nil
 }
 
+func (s *BookingService) GetRoom(ctx context.Context, roomID int64) (domain.Room, error) {
+	s.logger.Info("Getting room", "roomID", roomID)
+	if roomID <= 0 {
+		s.logger.Error("Invalid room ID", "roomID", roomID)
+		return domain.Room{}, domain.ErrInvalidInputData
+	}
+	room, err := s.roomRepo.Get(ctx, domain.RoomID(roomID))
+	if err != nil {
+		s.logger.Error("Failed to get room", "error", err)
+		return domain.Room{}, err
+	}
+
+	s.logger.Info("Room found", "roomID", roomID, "name", room.Name)
+	return room, nil
+}
+
 // func (s *BookingService) AdminCancelBooking(ctx context.Context, bookingID int64) error {
 // 	return nil
 // }
