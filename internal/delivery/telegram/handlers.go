@@ -24,6 +24,7 @@ type bookingSession struct {
 /* ---------- /start /help ---------- */
 
 func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Info("Received /start command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	text := "Привет! Я бот бронирования переговорок.\n\n" +
 		"/book — забронировать\n" +
 		"/my — мои брони\n" +
@@ -36,6 +37,7 @@ func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
 }
 
 func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Info("Received /help command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	text := "*Команды:*\n" +
 		"• /book — выбрать переговорку → день → время начала/окончания кнопками\n" +
 		"• /my — показать ваши будущие брони (кнопки «Отменить»)\n" +
@@ -49,6 +51,7 @@ func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
 /* ---------- /rooms ---------- */
 
 func (h *Handler) handleRooms(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Info("Received /rooms command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	rooms, err := h.uc.ListRooms(ctx)
 	if err != nil {
 		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
@@ -69,6 +72,7 @@ func (h *Handler) handleRooms(ctx context.Context, msg *tgbotapi.Message) {
 /* ---------- /my ---------- */
 
 func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Info("Received /my command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	bookings, err := h.uc.ListUserBookings(ctx, int64(msg.From.ID))
 	if err != nil {
 		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
@@ -101,6 +105,7 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 /* ---------- /cancel [id] ---------- */
 
 func (h *Handler) handleCancelCommand(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Info("Received /cancel command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	arg := strings.TrimSpace(msg.CommandArguments())
 	if arg == "" {
 		h.reply(msg.Chat.ID, "Формат: `/cancel <id>` или воспользуйтесь /my и нажмите «Отменить».")
@@ -133,6 +138,7 @@ func (h *Handler) handleCancelCommand(ctx context.Context, msg *tgbotapi.Message
 /* ---------- /book ---------- */
 
 func (h *Handler) handleBookStart(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Info("Received /book command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	rooms, err := h.uc.ListRooms(ctx)
 	if err != nil {
 		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
@@ -159,6 +165,7 @@ func (h *Handler) handleBookStart(ctx context.Context, msg *tgbotapi.Message) {
 /* ---------- /create_room /deactivate_room ---------- */
 
 func (h *Handler) handleCreateRoom(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Info("Received /create_room command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	if !h.isAdmin(ctx, int64(msg.From.ID)) {
 		h.reply(msg.Chat.ID, "Недостаточно прав.")
 		return
@@ -176,6 +183,7 @@ func (h *Handler) handleCreateRoom(ctx context.Context, msg *tgbotapi.Message) {
 }
 
 func (h *Handler) handleDeactivateRoom(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Info("Received /deactivate_room command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	if !h.isAdmin(ctx, int64(msg.From.ID)) {
 		h.reply(msg.Chat.ID, "Недостаточно прав.")
 		return
@@ -196,6 +204,7 @@ func (h *Handler) handleDeactivateRoom(ctx context.Context, msg *tgbotapi.Messag
 /* ---------- callbacks (календарь/время и отмена) ---------- */
 
 func (h *Handler) handleCallback(ctx context.Context, cb *tgbotapi.CallbackQuery) {
+	h.log.Info("Received callback", "user", cb.From.UserName, "chat_id", cb.Message.Chat.ID, "data", cb.Data)
 	data := cb.Data
 
 	switch {
