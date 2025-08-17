@@ -70,6 +70,17 @@ func (r *roomRepositoryPG) List(ctx context.Context) ([]domain.Room, error) {
 	return rooms, nil
 }
 
+func (r *roomRepositoryPG) Get(ctx context.Context, id domain.RoomID) (domain.Room, error) {
+	var rr roomRow
+	if err := r.db.GetContext(ctx, &rr, qGetRoomByID, int64(id)); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.Room{}, domain.ErrRoomNotFound
+		}
+		return domain.Room{}, fmt.Errorf("failed to get room: %w", err)
+	}
+	return roomRowToDomain(rr), nil
+}
+
 // helper functions
 
 func roomRowToDomain(rr roomRow) domain.Room {

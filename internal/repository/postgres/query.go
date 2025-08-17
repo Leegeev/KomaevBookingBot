@@ -108,3 +108,9 @@ FROM rooms
 WHERE is_active = TRUE
 ORDER BY id;
 `
+
+const qGetRoomByID = `
+SELECT id, name
+FROM rooms
+WHERE id = $1
+`

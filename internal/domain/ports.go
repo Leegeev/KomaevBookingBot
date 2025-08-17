@@ -12,6 +12,7 @@ type RoomRepository interface {
 	Create(ctx context.Context, r Room) (RoomID, error)
 	Delete(ctx context.Context, id RoomID) error
 	List(ctx context.Context) ([]Room, error)
+	Get(ctx context.Context, id RoomID) (Room, error)
 }
 
 // Репозиторий броней.
@@ -37,8 +38,8 @@ type BookingRepository interface {
 
 // Репозиторий пользователей (whitelist).
 // Если getChatMember работает как надо, то можно и не хранить пользователей в БД.
-type UserRepository interface {
-	Add(ctx context.Context, u User) error
-	Delete(ctx context.Context, userID UserID) error
-	IsWhitelisted(ctx context.Context, userID UserID) (bool, error)
-}
+// type UserRepository interface {
+// 	Add(ctx context.Context, u User) error
+// 	Delete(ctx context.Context, userID UserID) error
+// 	IsWhitelisted(ctx context.Context, userID UserID) (bool, error)
+// }

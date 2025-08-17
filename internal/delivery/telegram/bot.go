@@ -3,11 +3,11 @@ package telegram
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
+	// "os"
+	// "os/signal"
 	"strings"
-	"syscall"
-	"time"
+	// "syscall"
+	// "time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
