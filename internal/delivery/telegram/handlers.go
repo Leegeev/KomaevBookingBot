@@ -24,28 +24,56 @@ type bookingSession struct {
 /* ---------- /start /help ---------- */
 
 func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
+	select {
+	case <-ctx.Done():
+		h.log.Warn("Context canceled in /start handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
+		return
+	default:
+	}
+
 	h.log.Info("Received /start command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
-	text := "Привет! Я бот бронирования переговорок.\n\n" +
-		"/book — забронировать\n" +
-		"/my — мои брони\n" +
-		"/rooms — список переговорок\n" +
-		"/cancel — отменить бронь\n" +
-		"/help — справка\n" +
-		"/create_room — создать переговорку (админ)\n" +
-		"/deactivate_room — деактивировать переговорку (админ)"
-	h.reply(msg.Chat.ID, text)
+
+	text := "*Привет\\! Я бот бронирования переговорок\\.*\n\n" +
+		"• /book — забронировать\n" +
+		"• /my — мои брони\n" +
+		"• /rooms — список переговорок\n" +
+		"• /cancel — отменить бронь\n" +
+		"• /help — справка\n" +
+		"• /create\\_room — создать переговорку \\(админ\\)\n" +
+		"• /deactivate\\_room — деактивировать переговорку \\(админ\\)"
+
+	msgOut := tgbotapi.NewMessage(msg.Chat.ID, text)
+	msgOut.ParseMode = "MarkdownV2"
+
+	if _, err := h.bot.Send(msgOut); err != nil {
+		h.log.Error("Failed to send /start message", "error", err)
+	}
 }
 
 func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
+	select {
+	case <-ctx.Done():
+		h.log.Warn("Context canceled in /help handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
+		return
+	default:
+	}
+
 	h.log.Info("Received /help command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
+
 	text := "*Команды:*\n" +
 		"• /book — выбрать переговорку → день → время начала/окончания кнопками\n" +
-		"• /my — показать ваши будущие брони (кнопки «Отменить»)\n" +
+		"• /my — показать ваши будущие брони \\(кнопки «Отменить»\\)\n" +
 		"• /rooms — показать активные переговорки\n" +
 		"• /cancel `<id>` — отменить по номеру\n" +
-		"• /create_room `<name>` — создать переговорку (админ)\n" +
-		"• /deactivate_room `<room_id>` — выключить переговорку (админ)"
-	h.reply(msg.Chat.ID, text)
+		"• /create\\_room `<name>` — создать переговорку \\(админ\\)\n" +
+		"• /deactivate\\_room `<room_id>` — выключить переговорку \\(админ\\)"
+
+	msgOut := tgbotapi.NewMessage(msg.Chat.ID, text)
+	msgOut.ParseMode = "MarkdownV2"
+
+	if _, err := h.bot.Send(msgOut); err != nil {
+		h.log.Error("Failed to send /help message", "error", err)
+	}
 }
 
 /* ---------- /rooms ---------- */

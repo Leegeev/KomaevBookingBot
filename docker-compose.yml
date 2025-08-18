@@ -10,8 +10,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    # ports:
-      # - "${POSTGRES_PORT}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./scripts:/docker-entrypoint-initdb.d:ro
@@ -46,12 +44,6 @@ services:
     stop_grace_period: 10s
     networks:
       - app-network
-      # - ./.env:/src/.env:ro
-    # restart: unless-stopped
-    # Для long polling порты наружу не нужны.
-    # Если перейдёшь на webhook/HTTP health, раскомментируй:
-    # ports:
-    #   - "8080:8080"
 
 volumes:
   db-data:
