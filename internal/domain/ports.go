@@ -36,11 +36,3 @@ type BookingRepository interface {
 	// Санитарная очистка старых записей.
 	DeleteEndedBefore(ctx context.Context, cutoffUTC time.Time) (int64, error)
 }
-
-// Репозиторий пользователей (whitelist).
-// Если getChatMember работает как надо, то можно и не хранить пользователей в БД.
-// type UserRepository interface {
-// 	Add(ctx context.Context, u User) error
-// 	Delete(ctx context.Context, userID UserID) error
-// 	IsWhitelisted(ctx context.Context, userID UserID) (bool, error)
-// }

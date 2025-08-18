@@ -8,14 +8,6 @@ type (
 	BookingID int64
 )
 
-// Сущность пользователя (whitelist).
-type User struct {
-	ID       UserID // Telegram user_id
-	Username string
-	FullName string
-	Active   bool // можно выключить доступ без удаления
-}
-
 // Сущность комнаты для бронирования.
 type Room struct {
 	ID   RoomID

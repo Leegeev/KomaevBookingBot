@@ -2,7 +2,6 @@ package domain
 
 import "time"
 
-func (u User) Valid() bool { return u.ID != 0 }
 func (r Room) Valid() bool { return r.ID != 0 && r.Name != "" }
 
 func NewBooking(roomID RoomID, createdBy UserID, tr TimeRange, note string) (Booking, error) {

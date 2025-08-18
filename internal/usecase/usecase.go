@@ -13,7 +13,6 @@ func NewBookingService(roomRepo domain.RoomRepository, bookingRepo domain.Bookin
 		roomRepo:    roomRepo,
 		bookingRepo: bookingRepo,
 		logger:      logger,
-		// userRepo:    userRepo,
 	}
 }
 
@@ -21,7 +20,6 @@ type BookingService struct {
 	roomRepo    domain.RoomRepository
 	bookingRepo domain.BookingRepository
 	logger      logger.Logger
-	// userRepo    domain.UserRepository
 }
 
 type CreateBookingCmd struct {
