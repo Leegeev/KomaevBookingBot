@@ -90,7 +90,7 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 		start := bk.Range.Start.In(h.cfg.OfficeTZ) // если у тебя bk.Interval — замени
 		end := bk.Range.End.In(h.cfg.OfficeTZ)
 		roomInfo, _ := h.uc.GetRoom(ctx, int64(bk.RoomID))
-		fmt.Fprintf(&b, "• #%d — %s %02d:%02d–%02d:%02d\n",
+		fmt.Fprintf(&b, "• #%s — %s %02d:%02d–%02d:%02d\n",
 			roomInfo.Name, start.Format("2006-01-02"), start.Hour(), start.Minute(), end.Hour(), end.Minute())
 
 		cb := tgbotapi.NewInlineKeyboardButtonData("Отменить", fmt.Sprintf("c:%d", bk.ID))

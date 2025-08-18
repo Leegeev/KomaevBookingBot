@@ -20,6 +20,7 @@ func ConnectDBWithRetry(ctx context.Context, cfg config.DB, logger logger.Logger
 	var db *sqlx.DB
 	var err error
 	dsn := cfg.DSN()
+	logger.Info("DSN loaded", "dsn", dsn)
 	for attempt := 1; attempt <= cfg.RetryCount; attempt++ {
 		db, err = sqlx.Open("pgx", dsn)
 		if err != nil {

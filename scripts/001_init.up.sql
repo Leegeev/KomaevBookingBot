@@ -6,15 +6,6 @@ CREATE TABLE rooms (
   name       TEXT UNIQUE NOT NULL,         -- 'Переговорка 1', 'Переговорка 2'
   is_active  BOOLEAN NOT NULL DEFAULT TRUE -- активна для бронирования
 );
-
--- CREATE TABLE users_whitelist (
---   user_id     BIGINT PRIMARY KEY,   -- Telegram user id
---   username    TEXT,
---   full_name   TEXT
--- );
-
--- Храним брони в виде диапазонов времени (tstzrange).
--- Вставляем в UTC (бот конвертирует из локального времени офиса в UTC).
 CREATE TABLE bookings (
   id          BIGSERIAL PRIMARY KEY,
   room_id     INT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
