@@ -41,6 +41,19 @@ func (s *BookingService) CreateBooking(ctx context.Context, cmd CreateBookingCmd
 		return err
 	}
 
+	// Check if room exists
+	_, err = s.roomRepo.GetByID(ctx, cmd.RoomID)
+	if err == domain.ErrRoomNotFound {
+		s.logger.Error("Failed to get room by ID", "error", err)
+		return domain.ErrRoomNotFound
+	}
+
+	// Is it active?
+	if room, _ := s.roomRepo.GetByID(ctx, cmd.RoomID); !room.IsActive {
+		s.logger.Error("Room is not active", "roomID", cmd.RoomID)
+		return domain.ErrRoomNotFound
+	}
+
 	// Create booking entity
 	booking, err := domain.NewBooking(cmd.RoomID, cmd.UserID, tr, cmd.Note)
 	if err != nil {
