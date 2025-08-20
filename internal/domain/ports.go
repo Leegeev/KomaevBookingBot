@@ -10,9 +10,11 @@ import (
 // Репозиторий переговорок.
 type RoomRepository interface {
 	Create(ctx context.Context, r Room) (RoomID, error)
-	Delete(ctx context.Context, id RoomID) error
+	Deactivate(ctx context.Context, id RoomID) error
+	Activate(ctx context.Context, id RoomID) error
 	List(ctx context.Context) ([]Room, error)
-	Get(ctx context.Context, id RoomID) (Room, error)
+	GetByID(ctx context.Context, id RoomID) (Room, error)
+	GetByName(ctx context.Context, name string) (Room, error) // Опционально, если нужно
 }
 
 // Репозиторий броней.

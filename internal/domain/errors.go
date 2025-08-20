@@ -3,9 +3,14 @@ package domain
 import "errors"
 
 var (
-	ErrUnauthorized          = errors.New("not authorized")
-	ErrUserNotWhitelisted    = errors.New("user not in whitelist")
-	ErrRoomNotFound          = errors.New("room not found")
+	ErrUnauthorized       = errors.New("not authorized")
+	ErrUserNotWhitelisted = errors.New("user not in whitelist")
+
+	// room errors
+	ErrRoomNotFound      = errors.New("room not found")
+	ErrRoomAlreadyExists = errors.New("room already exists")
+	ErrNoRoomsAvailable  = errors.New("no rooms available")
+
 	ErrBookingNotFound       = errors.New("booking not found")
 	ErrInvalidTimeRange      = errors.New("invalid time range")
 	ErrPastTimeNotAllowed    = errors.New("cannot book in the past")
@@ -17,6 +22,5 @@ var (
 	ErrForbiddenCancellation = errors.New("user cannot cancel this booking")
 	ErrDBConnectionFailed    = errors.New("failed to connect to database")
 	ErrInvalidInputData      = errors.New("invalid input data")
-	ErrNoRoomsAvailable      = errors.New("no rooms available")
 	ErrNotOwner              = errors.New("user does not own this booking")
 )

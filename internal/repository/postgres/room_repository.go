@@ -21,8 +21,9 @@ func NewRoomRepositoryPG(db *sqlx.DB, l logger.Logger) *roomRepositoryPG {
 }
 
 type roomRow struct {
-	ID   int64  `db:"id"`
-	Name string `db:"name"`
+	ID       int64  `db:"id"`
+	Name     string `db:"name"`
+	IsActive bool   `db:"is_active"`
 }
 
 // methods
@@ -38,7 +39,7 @@ func (r *roomRepositoryPG) Create(ctx context.Context, room domain.Room) (domain
 	return domain.RoomID(newID), nil
 }
 
-func (r *roomRepositoryPG) Delete(ctx context.Context, id domain.RoomID) error {
+func (r *roomRepositoryPG) Deactivate(ctx context.Context, id domain.RoomID) error {
 	res, err := r.db.ExecContext(ctx, qDeactivateRoom, int64(id))
 	if err != nil {
 		return err
@@ -70,7 +71,7 @@ func (r *roomRepositoryPG) List(ctx context.Context) ([]domain.Room, error) {
 	return rooms, nil
 }
 
-func (r *roomRepositoryPG) Get(ctx context.Context, id domain.RoomID) (domain.Room, error) {
+func (r *roomRepositoryPG) GetByID(ctx context.Context, id domain.RoomID) (domain.Room, error) {
 	var rr roomRow
 	if err := r.db.GetContext(ctx, &rr, qGetRoomByID, int64(id)); err != nil {
 		if err == sql.ErrNoRows {
@@ -81,11 +82,38 @@ func (r *roomRepositoryPG) Get(ctx context.Context, id domain.RoomID) (domain.Ro
 	return roomRowToDomain(rr), nil
 }
 
+func (r *roomRepositoryPG) GetByName(ctx context.Context, name string) (domain.Room, error) {
+	var rr roomRow
+	if err := r.db.GetContext(ctx, &rr, qGetRoomByName, name); err != nil {
+		if err == sql.ErrNoRows {
+			return domain.Room{}, domain.ErrRoomNotFound
+		}
+		return domain.Room{}, fmt.Errorf("failed to get room by name: %w", err)
+	}
+	return roomRowToDomain(rr), nil
+}
+
+func (r *roomRepositoryPG) Activate(ctx context.Context, id domain.RoomID) error {
+	res, err := r.db.ExecContext(ctx, qActivateRoom, int64(id))
+	if err != nil {
+		return fmt.Errorf("failed to activate room: %w", err)
+	}
+	aff, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %w", err)
+	}
+	if aff == 0 {
+		return domain.ErrRoomNotFound
+	}
+	return nil
+}
+
 // helper functions
 
 func roomRowToDomain(rr roomRow) domain.Room {
 	return domain.Room{
-		ID:   domain.RoomID(rr.ID),
-		Name: rr.Name,
+		ID:       domain.RoomID(rr.ID),
+		Name:     rr.Name,
+		IsActive: rr.IsActive,
 	}
 }

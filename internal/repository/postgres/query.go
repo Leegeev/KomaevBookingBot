@@ -114,3 +114,13 @@ SELECT id, name
 FROM rooms
 WHERE id = $1
 `
+const qGetRoomByName = `
+SELECT id, name
+FROM rooms
+WHERE name = $1
+`
+const qActivateRoom = `
+UPDATE rooms
+SET is_active = TRUE
+WHERE id = $1;
+`
