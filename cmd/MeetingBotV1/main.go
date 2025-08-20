@@ -19,7 +19,8 @@ import (
 	"os"
 )
 
-// сука у меня он к бд не подключается гандон
+// front нужно сделать
+
 // TODO: исправить подключение к бд, чтобы не было говнокода с контекстом и т.д.
 
 func main() {
@@ -53,32 +54,12 @@ func main() {
 
 	service := usecase.NewBookingService(roomRepo, bookingRepo, logger)
 
-	/*
-		// Запуск бота
-		g, ctx := errgroup.WithContext(ctx)
-
-		g.Go(func() error {
-			logger.Info("Telegram bot starting...")
-			// ВАЖНО: StartBot должен блокировать до ctx.Done() и возвращать ошибку при фатале.
-			if err := telegram.StartBot(ctx, config.Telegram, service, logger); err != nil {
-				return err
-			}
-			logger.Info("Telegram bot stopped")
-			return nil
-		})
-		if err := g.Wait(); err != nil {
-			logger.Error("Service stopped with error", "error", err)
-			os.Exit(1)
-		}
-	*/
-
 	bot, _ := tgbotapi.NewBotAPI(config.Telegram.Token)
 	h := telegram.NewHandler(bot, config.Telegram, logger, service)
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
 		logger.Info("Telegram bot starting...")
-		// ВАЖНО: StartBot должен блокировать до ctx.Done() и возвращать ошибку при фатале.
 		if err := h.RunPolling(ctx); err != nil {
 			logger.Error("bot stopped", "error", err)
 		}

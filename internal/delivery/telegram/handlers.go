@@ -21,6 +21,19 @@ type bookingSession struct {
 	EndH, EndM     *int
 }
 
+type usecaseforme interface {
+	CreateBooking(ctx context.Context, cmd bookingSession) error
+	CancelBooking(ctx context.Context, bookingID int64) error
+	CheckBookingAndUserID(ctx context.Context, bookingID, userID int64) (bool, error)
+	ListUserBookings(ctx context.Context, userID int64) ([]domain.Booking, error)
+	ListRoomBookings(ctx context.Context, roomID int64) ([]domain.Booking, error)
+	ListRooms(ctx context.Context) ([]domain.Room, error)
+	GetRoom(ctx context.Context, roomID int64) (domain.Room, error)
+	AdminCreateRoom(ctx context.Context, name string) error
+	AdminDeleteRoom(ctx context.Context, roomID int64) error
+	// FreeSlots(ctx context.Context, roomID domain.RoomID, day time.Time, step time.Duration) ([]domain.TimeRange, error)
+}
+
 /* ---------- /start /help ---------- */
 
 func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
@@ -77,12 +90,23 @@ func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
 }
 
 /* ---------- /rooms ---------- */
-
 func (h *Handler) handleRooms(ctx context.Context, msg *tgbotapi.Message) {
+	select {
+	case <-ctx.Done():
+		h.log.Warn("Context canceled in /rooms handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
+		return
+	default:
+	}
+
 	h.log.Info("Received /rooms command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	rooms, err := h.uc.ListRooms(ctx)
-	if err != nil {
-		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
+	if err == domain.ErrNoRoomsAvailable {
+		h.log.Warn("No rooms available", "error", err)
+		h.reply(msg.Chat.ID, "Нет активных переговорок.")
+		return
+	} else if err != nil {
+		h.log.Error("Failed to list rooms", "error", err)
+		h.reply(msg.Chat.ID, "Возникла ошибка при получении списка переговорок: ")
 		return
 	}
 	if len(rooms) == 0 {
@@ -100,6 +124,13 @@ func (h *Handler) handleRooms(ctx context.Context, msg *tgbotapi.Message) {
 /* ---------- /my ---------- */
 
 func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
+	select {
+	case <-ctx.Done():
+		h.log.Warn("Context canceled in /my handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
+		return
+	default:
+	}
+
 	h.log.Info("Received /my command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	bookings, err := h.uc.ListUserBookings(ctx, int64(msg.From.ID))
 	if err != nil {
@@ -115,7 +146,7 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 	var b strings.Builder
 	b.WriteString("*Ваши брони:*\n")
 	for _, bk := range bookings {
-		start := bk.Range.Start.In(h.cfg.OfficeTZ) // если у тебя bk.Interval — замени
+		start := bk.Range.Start.In(h.cfg.OfficeTZ)
 		end := bk.Range.End.In(h.cfg.OfficeTZ)
 		roomInfo, _ := h.uc.GetRoom(ctx, int64(bk.RoomID))
 		fmt.Fprintf(&b, "• #%s — %s %02d:%02d–%02d:%02d\n",
@@ -133,8 +164,20 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 /* ---------- /cancel [id] ---------- */
 
 func (h *Handler) handleCancelCommand(ctx context.Context, msg *tgbotapi.Message) {
+	select {
+	case <-ctx.Done():
+		h.log.Warn("Context canceled in /cancel handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
+		return
+	default:
+	}
 	h.log.Info("Received /cancel command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	arg := strings.TrimSpace(msg.CommandArguments())
+	/*
+		ATTENTION!!
+		I SHOULD DO THIS VIA CALLBACK DATA
+		ATTENTION!!
+		❌❌❌❌❌
+	*/
 	if arg == "" {
 		h.reply(msg.Chat.ID, "Формат: `/cancel <id>` или воспользуйтесь /my и нажмите «Отменить».")
 		return
@@ -144,15 +187,18 @@ func (h *Handler) handleCancelCommand(ctx context.Context, msg *tgbotapi.Message
 		h.reply(msg.Chat.ID, "Некорректный id.")
 		return
 	}
+	// false, domain.ErrNotOwner
 
-	// Админ может отменять любые брони, обычный — свои (в текущем упрощённом сервисе — без проверки владельца).
-	ok, err := h.uc.CheckBookingAndUserID(ctx, id, msg.From.ID)
-	if err != nil {
-		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
+	_, err = h.uc.CheckBookingAndUserID(ctx, id, msg.From.ID)
+	// если юзер не владелец И не админ
+	if err == domain.ErrNotOwner && !h.isAdmin(ctx, int64(msg.From.ID)) {
+		h.reply(msg.Chat.ID, "Недостаточно прав для отмены этой брони.")
 		return
 	}
-	if !ok && !h.isAdmin(ctx, int64(msg.From.ID)) {
-		h.reply(msg.Chat.ID, "Недостаточно прав для отмены этой брони.")
+	// если он админ ИЛИ владелец, если он владелец И админ
+
+	if err != nil {
+		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
 		return
 	}
 	// Он либо админ, либо владелец брони, так что можно отменять.
@@ -164,7 +210,7 @@ func (h *Handler) handleCancelCommand(ctx context.Context, msg *tgbotapi.Message
 }
 
 /* ---------- /book ---------- */
-
+// остановился тут
 func (h *Handler) handleBookStart(ctx context.Context, msg *tgbotapi.Message) {
 	h.log.Info("Received /book command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	rooms, err := h.uc.ListRooms(ctx)

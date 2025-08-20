@@ -31,7 +31,7 @@ type CreateBookingCmd struct {
 }
 
 func (s *BookingService) CreateBooking(ctx context.Context, cmd CreateBookingCmd) error {
-	s.logger.Info("Creating booking", "booking", cmd)
+	s.logger.Info("Creating booking", "user", cmd.UserID, "roomID", cmd.RoomID, "start", cmd.Start, "end", cmd.End)
 
 	// Validate input
 	// Create TimeRange
@@ -42,14 +42,14 @@ func (s *BookingService) CreateBooking(ctx context.Context, cmd CreateBookingCmd
 	}
 
 	// Check if room exists
-	_, err = s.roomRepo.GetByID(ctx, cmd.RoomID)
+	room, err := s.roomRepo.GetByID(ctx, cmd.RoomID)
 	if err == domain.ErrRoomNotFound {
 		s.logger.Error("Failed to get room by ID", "error", err)
 		return domain.ErrRoomNotFound
 	}
 
 	// Is it active?
-	if room, _ := s.roomRepo.GetByID(ctx, cmd.RoomID); !room.IsActive {
+	if !room.IsActive {
 		s.logger.Error("Room is not active", "roomID", cmd.RoomID)
 		return domain.ErrRoomNotFound
 	}
@@ -118,7 +118,8 @@ func (s *BookingService) ListRoomBookings(ctx context.Context, roomID int64) ([]
 		s.logger.Error("Invalid room ID", "roomID", roomID)
 		return nil, domain.ErrInvalidInputData
 	}
-	bookings, err := s.bookingRepo.ListByRoomAndInterval(ctx, domain.RoomID(roomID), time.Now().UTC(), time.Now().UTC().Add(time.Hour*24*7))
+	now := time.Now().UTC()
+	bookings, err := s.bookingRepo.ListByRoomAndInterval(ctx, domain.RoomID(roomID), now, now.Add(time.Hour*24*7))
 	if err != nil {
 		s.logger.Error("Failed to list room bookings", "error", err)
 		return nil, err
@@ -169,7 +170,7 @@ func (s *BookingService) AdminCreateRoom(ctx context.Context, name string) error
 	}
 	room, err := s.roomRepo.GetByName(ctx, name)
 	if err != nil && err != domain.ErrRoomNotFound {
-		s.logger.Error("Failed to get room by name", "error", "err")
+		s.logger.Error("Failed to get room by name", "error", err)
 		return err
 	}
 	if err == domain.ErrRoomNotFound {
@@ -203,5 +204,7 @@ func (s *BookingService) AdminDeleteRoom(ctx context.Context, roomID int64) erro
 	s.logger.Info("Room deleted successfully", "roomID", roomID)
 	return nil
 }
+
+// func (s *BookingService) FreeSlots(ctx context.Context, roomID domain.RoomID, day time.Time, step time.Duration) ([]domain.TimeRange, error)
 
 // getChatMember). Если status ∈ {creator, administrator, member} — добавляем/обновляем в users_whitelist
