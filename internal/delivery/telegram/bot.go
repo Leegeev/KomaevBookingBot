@@ -14,20 +14,21 @@ import (
 
 // Основной хэндлер
 type Handler struct {
-	bot      *tgbotapi.BotAPI
-	cfg      config.Telegram
-	log      logger.Logger
-	uc       *usecase.BookingService
-	bookSess map[int64]*bookingSession // userID -> сессия бронирования
+	bot *tgbotapi.BotAPI
+	cfg config.Telegram
+	log logger.Logger
+	uc  *usecase.BookingService
+	// bookSess map[int64]*bookingSession // userID -> сессия бронирования
+	// roleCache map[int64]string // userID -> роль (user/admin)
 }
 
 func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc *usecase.BookingService) *Handler {
 	return &Handler{
-		bot:      bot,
-		cfg:      cfg,
-		log:      log,
-		uc:       uc,
-		bookSess: make(map[int64]*bookingSession),
+		bot: bot,
+		cfg: cfg,
+		log: log,
+		uc:  uc,
+		// bookSess: make(map[int64]*bookingSession),
 	}
 }
 

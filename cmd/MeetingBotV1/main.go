@@ -21,8 +21,6 @@ import (
 
 // front нужно сделать
 
-// TODO: исправить подключение к бд, чтобы не было говнокода с контекстом и т.д.
-
 func main() {
 	// Initialize logger
 	logger := logger.SetupLogger()
@@ -40,7 +38,7 @@ func main() {
 	}
 	logger.Info("Configuration loaded successfully", "config", config)
 
-	// Подключение к базе данных с повторными попытками
+	// Подключение к БД
 	db, err := db.ConnectDBWithRetry(ctx, config.DB, logger)
 	if err != nil {
 		logger.Error("Failed to connect to database", "error", err)
@@ -52,8 +50,10 @@ func main() {
 	roomRepo := repository.NewRoomRepositoryPG(db, logger)
 	bookingRepo := repository.NewBookingRepositoryPG(db, logger)
 
+	// Инициализация сервиса
 	service := usecase.NewBookingService(roomRepo, bookingRepo, logger)
 
+	// TG BOT
 	bot, _ := tgbotapi.NewBotAPI(config.Telegram.Token)
 	h := telegram.NewHandler(bot, config.Telegram, logger, service)
 	g, ctx := errgroup.WithContext(ctx)
