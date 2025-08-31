@@ -5,20 +5,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
-
-type bookingSession struct {
-	RoomID   int64
-	DayLocal time.Time // полночь локального дня (OfficeTZ)
-
-	StartH, StartM *int
-	EndH, EndM     *int
-}
 
 type usecaseforme interface {
 	CreateBooking(ctx context.Context, cmd bookingSession) error
@@ -33,68 +24,149 @@ type usecaseforme interface {
 	// FreeSlots(ctx context.Context, roomID domain.RoomID, day time.Time, step time.Duration) ([]domain.TimeRange, error)
 }
 
+// handleMy
+// handleBookStart
+// handleSchedule
+// handleCreateRoom
+// handleDeactivateRoom
+
+/*
+// handleStart
+// handleHelp
+*/
+
 /* ---------- /start /help ---------- */
 
 func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
-	select {
-	case <-ctx.Done():
-		h.log.Warn("Context canceled in /start handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
+	if err := ctx.Err(); err != nil {
+		h.log.Warn("Context canceled in /start handler",
+			"user", msg.From.UserName,
+			"user_id", msg.From.ID,
+			"chat_id", msg.Chat.ID,
+			"err", err)
 		return
-	default:
 	}
 
-	h.log.Info("Received /start command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
+	h.log.Info("Received /start command",
+		"user", msg.From.UserName,
+		"user_id", msg.From.ID,
+		"chat_id", msg.Chat.ID)
 
-	text := "*Привет\\! Я бот бронирования переговорок\\.*\n\n" +
-		"• /book — забронировать\n" +
-		"• /my — мои брони\n" +
-		"• /rooms — список переговорок\n" +
-		"• /cancel — отменить бронь\n" +
-		"• /help — справка\n" +
-		"• /create\\_room — создать переговорку \\(админ\\)\n" +
-		"• /deactivate\\_room — деактивировать переговорку \\(админ\\)"
+	msgText := getStartMessageText()
 
-	msgOut := tgbotapi.NewMessage(msg.Chat.ID, text)
+	role, err := h.getRole(ctx, msg.From.ID)
+	if err != nil {
+		h.log.Error("Failed to get user role", "user_id", msg.From.ID, "err", err)
+	} else {
+		if role == Administrator || role == Creator {
+			msgText += "\n\n" + getAdminStartMessageText()
+		}
+	}
+
+	escaped := EscapeMarkdownV2(msgText)
+
+	msgOut := tgbotapi.NewMessage(msg.Chat.ID, escaped)
 	msgOut.ParseMode = "MarkdownV2"
 
 	if _, err := h.bot.Send(msgOut); err != nil {
-		h.log.Error("Failed to send /start message", "error", err)
+		h.log.Error("Failed to send /start message",
+			"user", msg.From.UserName,
+			"chat_id", msg.Chat.ID,
+			"err", err)
 	}
 }
 
 func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
-	select {
-	case <-ctx.Done():
-		h.log.Warn("Context canceled in /help handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
+	if err := ctx.Err(); err != nil {
+		h.log.Warn("Context canceled in /help handler",
+			"user", msg.From.UserName,
+			"user_id", msg.From.ID,
+			"chat_id", msg.Chat.ID,
+			"err", err)
 		return
-	default:
 	}
 
-	h.log.Info("Received /help command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
+	h.log.Info("Received /help command",
+		"user", msg.From.UserName,
+		"user_id", msg.From.ID,
+		"chat_id", msg.Chat.ID)
 
-	text := "*Команды:*\n" +
-		"• /book — выбрать переговорку → день → время начала/окончания кнопками\n" +
-		"• /my — показать ваши будущие брони \\(кнопки «Отменить»\\)\n" +
-		"• /rooms — показать активные переговорки\n" +
-		"• /cancel `<id>` — отменить по номеру\n" +
-		"• /create\\_room `<name>` — создать переговорку \\(админ\\)\n" +
-		"• /deactivate\\_room `<room_id>` — выключить переговорку \\(админ\\)"
+	msgText := getHelpMessageText()
 
-	msgOut := tgbotapi.NewMessage(msg.Chat.ID, text)
+	role, err := h.getRole(ctx, msg.From.ID)
+	if err != nil {
+		h.log.Error("Failed to get user role", "user_id", msg.From.ID, "err", err)
+	} else {
+		if role == Administrator || role == Creator {
+			msgText += "\n\n" + getAdminHelpMessageText()
+		}
+	}
+
+	escaped := EscapeMarkdownV2(msgText)
+
+	msgOut := tgbotapi.NewMessage(msg.Chat.ID, escaped)
 	msgOut.ParseMode = "MarkdownV2"
 
 	if _, err := h.bot.Send(msgOut); err != nil {
-		h.log.Error("Failed to send /help message", "error", err)
+		h.log.Error("Failed to send /help message",
+			"user", msg.From.UserName,
+			"chat_id", msg.Chat.ID,
+			"err", err)
 	}
+}
+
+/* ---------- /my ---------- */
+func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
+	if err := ctx.Err(); err != nil {
+		h.log.Warn("Context canceled in /my handler",
+			"user", msg.From.UserName,
+			"chat_id", msg.Chat.ID,
+			"err", ctx.Err())
+		return
+	}
+
+	h.log.Info("Received /my command",
+		"user", msg.From.UserName,
+		"user_id", msg.From.ID,
+		"chat_id", msg.Chat.ID)
+
+	bookings, err := h.uc.ListUserBookings(ctx, int64(msg.From.ID))
+	if err != nil {
+		h.log.Error("Failed to list user bookings", "user_id", msg.From.ID, "error", err)
+		h.notifyAdmin(fmt.Sprintf("❗ *Ошибка:* `%s`", err.Error()))
+		h.reply(msg.Chat.ID, "Возникла ошибка при получении ваших броней.")
+		return
+	}
+
+	if len(bookings) == 0 {
+		h.reply(msg.Chat.ID, "У вас нет будущих броней.")
+		return
+	}
+
+	kbRows := [][]tgbotapi.InlineKeyboardButton{}
+	var b strings.Builder
+	b.WriteString("*Ваши брони:*\n")
+	for _, bk := range bookings {
+		start := bk.Range.Start.In(h.cfg.OfficeTZ)
+		end := bk.Range.End.In(h.cfg.OfficeTZ)
+		roomInfo, _ := h.uc.GetRoom(ctx, int64(bk.RoomID))
+		fmt.Fprintf(&b, "• #%s — %s %02d:%02d–%02d:%02d\n",
+			roomInfo.Name, start.Format("2006-01-02"), start.Hour(), start.Minute(), end.Hour(), end.Minute())
+
+		cb := tgbotapi.NewInlineKeyboardButtonData("Отменить", fmt.Sprintf("c:%d", bk.ID))
+		kbRows = append(kbRows, tgbotapi.NewInlineKeyboardRow(cb))
+	}
+	m := tgbotapi.NewMessage(msg.Chat.ID, b.String())
+	m.ParseMode = "Markdown"
+	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(kbRows...)
+	_, _ = h.bot.Send(m)
 }
 
 /* ---------- /rooms ---------- */
 func (h *Handler) handleRooms(ctx context.Context, msg *tgbotapi.Message) {
-	select {
-	case <-ctx.Done():
+	if err := ctx.Err(); err != nil {
 		h.log.Warn("Context canceled in /rooms handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
 		return
-	default:
 	}
 
 	h.log.Info("Received /rooms command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
@@ -120,54 +192,12 @@ func (h *Handler) handleRooms(ctx context.Context, msg *tgbotapi.Message) {
 	h.reply(msg.Chat.ID, b.String())
 }
 
-/* ---------- /my ---------- */
-
-func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
-	select {
-	case <-ctx.Done():
-		h.log.Warn("Context canceled in /my handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
-		return
-	default:
-	}
-
-	h.log.Info("Received /my command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
-	bookings, err := h.uc.ListUserBookings(ctx, int64(msg.From.ID))
-	if err != nil {
-		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
-		return
-	}
-	if len(bookings) == 0 {
-		h.reply(msg.Chat.ID, "У вас нет будущих броней.")
-		return
-	}
-
-	kbRows := [][]tgbotapi.InlineKeyboardButton{}
-	var b strings.Builder
-	b.WriteString("*Ваши брони:*\n")
-	for _, bk := range bookings {
-		start := bk.Range.Start.In(h.cfg.OfficeTZ)
-		end := bk.Range.End.In(h.cfg.OfficeTZ)
-		roomInfo, _ := h.uc.GetRoom(ctx, int64(bk.RoomID))
-		fmt.Fprintf(&b, "• #%s — %s %02d:%02d–%02d:%02d\n",
-			roomInfo.Name, start.Format("2006-01-02"), start.Hour(), start.Minute(), end.Hour(), end.Minute())
-
-		cb := tgbotapi.NewInlineKeyboardButtonData("Отменить", fmt.Sprintf("c:%d", bk.ID))
-		kbRows = append(kbRows, tgbotapi.NewInlineKeyboardRow(cb))
-	}
-	m := tgbotapi.NewMessage(msg.Chat.ID, b.String())
-	m.ParseMode = "Markdown"
-	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(kbRows...)
-	_, _ = h.bot.Send(m)
-}
-
 /* ---------- /cancel [id] ---------- */
 
 func (h *Handler) handleCancelCommand(ctx context.Context, msg *tgbotapi.Message) {
-	select {
-	case <-ctx.Done():
+	if err := ctx.Err(); err != nil {
 		h.log.Warn("Context canceled in /cancel handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
 		return
-	default:
 	}
 	h.log.Info("Received /cancel command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	arg := strings.TrimSpace(msg.CommandArguments())
@@ -211,11 +241,9 @@ func (h *Handler) handleCancelCommand(ctx context.Context, msg *tgbotapi.Message
 /* ---------- /create_room /deactivate_room ---------- */
 
 func (h *Handler) handleCreateRoom(ctx context.Context, msg *tgbotapi.Message) {
-	select {
-	case <-ctx.Done():
+	if err := ctx.Err(); err != nil {
 		h.log.Warn("Context canceled in /CreateRoom handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
 		return
-	default:
 	}
 	h.log.Info("Received /create_room command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	if !h.isAdmin(ctx, int64(msg.From.ID)) {
@@ -235,11 +263,9 @@ func (h *Handler) handleCreateRoom(ctx context.Context, msg *tgbotapi.Message) {
 }
 
 func (h *Handler) handleDeactivateRoom(ctx context.Context, msg *tgbotapi.Message) {
-	select {
-	case <-ctx.Done():
+	if err := ctx.Err(); err != nil {
 		h.log.Warn("Context canceled in /DeleteRoom handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())
 		return
-	default:
 	}
 	h.log.Info("Received /deactivate_room command", "user", msg.From.UserName, "chat_id", msg.Chat.ID)
 	if !h.isAdmin(ctx, int64(msg.From.ID)) {

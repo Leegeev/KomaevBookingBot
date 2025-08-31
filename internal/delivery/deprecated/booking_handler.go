@@ -12,6 +12,29 @@ import (
 	"github.com/leegeev/KomaevBookingBot/internal/usecase"
 )
 
+const (
+	StateIdle = iota
+	StateProcessingCommand
+	BookStateChoosingRoom
+	BookStateChoosingDate
+	BookStateChoosingStartTime
+	BookStateChoosingDuration
+	BookStateConfirmingBooking
+)
+
+type BookingSession struct {
+	BookState int64
+	ChatID    int64
+	UserID    int64
+	MessageID int64 // сообщение, которое редактируем
+	RoomID    string
+	RoomName  string
+	Date      time.Time // без времени, локаль офиса
+	StartTime time.Time // полноценный time с датой+временем
+	EndTime   time.Time
+	Duration  time.Duration
+}
+
 /* ---------- /book ---------- */
 // остановился тут
 func (h *Handler) handleBookStart(ctx context.Context, msg *tgbotapi.Message) {

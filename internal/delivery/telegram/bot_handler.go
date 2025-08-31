@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	// "time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -14,12 +15,12 @@ import (
 
 // Основной хэндлер
 type Handler struct {
-	bot *tgbotapi.BotAPI
-	cfg config.Telegram
-	log logger.Logger
-	uc  *usecase.BookingService
-	// bookSess map[int64]*bookingSession // userID -> сессия бронирования
-	// roleCache map[int64]string // userID -> роль (user/admin)
+	bot       *tgbotapi.BotAPI
+	cfg       config.Telegram
+	log       logger.Logger
+	uc        *usecase.BookingService
+	bookSess  map[UserID]*bookingSession // userID -> сессия бронирования
+	roleCache map[UserID]string          // userID -> роль (user/admin)
 }
 
 func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc *usecase.BookingService) *Handler {
@@ -37,14 +38,14 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 	if _, err := h.bot.GetMe(); err != nil {
 		return fmt.Errorf("getMe: %w", err)
 	}
+	h.bot.Debug = true
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 30
-	u.AllowedUpdates = []string{"message", "callback_query"}
+	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig.Timeout = 30
+	// updateConfig.AllowedUpdates = []string{"message", "callback_query"}
 
-	updates := h.bot.GetUpdatesChan(u)
+	updates := h.bot.GetUpdatesChan(updateConfig)
 	defer h.bot.StopReceivingUpdates()
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -54,9 +55,14 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 				return fmt.Errorf("updates channel closed")
 			}
 			h.dispatch(ctx, upd)
+			// go h.dispatch(ctx, upd) // TODO: лимит горутин
 		}
 	}
 }
+
+// Note that panics are a bad way to handle errors. Telegram can
+// have service outages or network errors, you should retry sending
+// messages or more gracefully handle failures.
 
 func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	defer func() {
@@ -67,29 +73,33 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 
 	if upd.Message != nil {
 		msg := upd.Message
-
-		// если в процессе /book — текст не обрабатываем (у нас кнопки)
 		if msg.IsCommand() {
 			switch msg.Command() {
+
+			// info handlers
 			case "start":
 				h.handleStart(ctx, msg)
 			case "help":
 				h.handleHelp(ctx, msg)
-			case "rooms":
-				h.handleRooms(ctx, msg)
+
+				// functional handlers
 			case "my":
 				h.handleMy(ctx, msg)
-			case "cancel":
-				h.handleCancelCommand(ctx, msg)
 			case "book":
 				h.handleBookStart(ctx, msg)
+			case "schedule":
+				h.handleSchedule(ctx, msg)
+
+				// rooms handlers
 			case "create_room":
 				h.handleCreateRoom(ctx, msg)
 			case "deactivate_room":
 				h.handleDeactivateRoom(ctx, msg)
-			// // TODO:
-			// case "schedule":
-			// 	h.handleSchedule(ctx, msg)
+
+				// case "rooms":
+				// h.handleRooms(ctx, msg)
+				// case "cancel":
+				// h.handleCancelCommand(ctx, msg)
 			default:
 				h.reply(msg.Chat.ID, "Неизвестная команда. Смотри /help")
 			}
@@ -114,21 +124,4 @@ func (h *Handler) reply(chatID int64, text string) {
 	m := tgbotapi.NewMessage(chatID, text)
 	m.ParseMode = "Markdown"
 	_, _ = h.bot.Send(m)
-}
-
-func (h *Handler) isAdmin(ctx context.Context, userID int64) bool {
-	if h.cfg.GroupChatID == 0 {
-		return false
-	}
-	m, err := h.bot.GetChatMember(tgbotapi.GetChatMemberConfig{
-		ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
-			ChatID: h.cfg.GroupChatID,
-			UserID: userID,
-		},
-	})
-	if err != nil {
-		h.log.Error("GetChatMember failed", "error", err)
-		return false
-	}
-	return m.Status == "creator" || m.Status == "administrator"
 }
