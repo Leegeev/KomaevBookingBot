@@ -33,6 +33,16 @@ const (
 	Member        = "member"
 )
 
+/*
+
+------callbacks------
+---my---
+my:select:*bk.ID*
+my:back
+
+
+*/
+
 func (h *Handler) getRole(ctx context.Context, userID int64) (string, error) {
 	if h.cfg.GroupChatID == 0 {
 		return "", fmt.Errorf("GroupChatID is not set in config")

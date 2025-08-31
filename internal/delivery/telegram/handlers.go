@@ -143,23 +143,35 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	kbRows := [][]tgbotapi.InlineKeyboardButton{}
-	var b strings.Builder
-	b.WriteString("*Ваши брони:*\n")
+	text := "*Ваши брони:*"
+	rows := make([][]tgbotapi.InlineKeyboardButton, 0, len(bookings))
 	for _, bk := range bookings {
 		start := bk.Range.Start.In(h.cfg.OfficeTZ)
 		end := bk.Range.End.In(h.cfg.OfficeTZ)
-		roomInfo, _ := h.uc.GetRoom(ctx, int64(bk.RoomID))
-		fmt.Fprintf(&b, "• #%s — %s %02d:%02d–%02d:%02d\n",
-			roomInfo.Name, start.Format("2006-01-02"), start.Hour(), start.Minute(), end.Hour(), end.Minute())
+		room, _ := h.uc.GetRoom(ctx, int64(bk.RoomID))
 
-		cb := tgbotapi.NewInlineKeyboardButtonData("Отменить", fmt.Sprintf("c:%d", bk.ID))
-		kbRows = append(kbRows, tgbotapi.NewInlineKeyboardRow(cb))
+		btnText := fmt.Sprintf("#%s — %s %02d:%02d–%02d:%02d",
+			room.Name, start.Format("01-02"),
+			start.Hour(), start.Minute(), end.Hour(), end.Minute())
+
+		data := fmt.Sprintf("my:select:%d", bk.ID)
+
+		btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
 	}
-	m := tgbotapi.NewMessage(msg.Chat.ID, b.String())
-	m.ParseMode = "Markdown"
-	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(kbRows...)
-	_, _ = h.bot.Send(m)
+
+	btnText := "Назад"
+	data := fmt.Sprintf("my:back")
+	btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
+
+	m := tgbotapi.NewMessage(msg.Chat.ID, EscapeMarkdownV2(text))
+	m.ParseMode = "MarkdownV2"
+	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
+
+	if _, err := h.bot.Send(m); err != nil {
+		h.log.Error("Failed to send /my list", "err", err)
+	}
 }
 
 /* ---------- /rooms ---------- */
