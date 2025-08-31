@@ -113,9 +113,13 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	}
 
 	if upd.CallbackQuery != nil {
-		h.handleCallback(ctx, upd.CallbackQuery)
+		h.сallbackRouter(ctx, upd.CallbackQuery)
 		return
 	}
+}
+
+func (h *Handler) сallbackRouter(ctx context.Context, cbq *tgbotapi.CallbackQuery) {
+
 }
 
 /* ------------ helpers ------------ */

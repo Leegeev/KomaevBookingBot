@@ -45,6 +45,7 @@ my:back
 
 func (h *Handler) getRole(ctx context.Context, userID int64) (string, error) {
 	if h.cfg.GroupChatID == 0 {
+		h.notifyAdmin("GroupChatID не установлен")
 		return "", fmt.Errorf("GroupChatID is not set in config")
 	}
 
