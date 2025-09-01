@@ -159,6 +159,14 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 	_, _ = h.bot.Send(msg)
 }
 
+func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	h.answerCB(cq, "")
+	h.log.Info("User clicked 'Назад' на списке комнат", "user_id", cq.From.ID)
+
+	// TODO: вернуться к стартовому экрану (например, список действий)
+	h.reply(cq.Message.Chat.ID, "Вы вернулись в главное меню.")
+}
+
 func buildCalendar(start time.Time) tgbotapi.InlineKeyboardMarkup {
 	// Строка 1 — навигация
 	row1 := tgbotapi.NewInlineKeyboardRow(
@@ -195,14 +203,6 @@ func buildCalendar(start time.Time) tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(row1, row2, row3, row4)
 }
 
-func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	h.answerCB(cq, "")
-	h.log.Info("User clicked 'Назад' на списке комнат", "user_id", cq.From.ID)
-
-	// TODO: вернуться к стартовому экрану (например, список действий)
-	h.reply(cq.Message.Chat.ID, "Вы вернулись в главное меню.")
-}
-
 func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQuery, dateStr string) {
 	h.answerCB(cq, "")
 
@@ -219,24 +219,27 @@ func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQ
 		return
 	}
 
-	session.Date = date
+	session.Date = date // LOCAL TIMEZONE
 
-	h.askTimeInput(ctx, cq.Message.Chat.ID, cq.Message.MessageID)
+	msg := tgbotapi.NewEditMessageTextAndMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		EscapeMarkdownV2(
+			getBookAskTimeInputText()),
+
+		tgbotapi.NewInlineKeyboardMarkup(
+			[]tgbotapi.InlineKeyboardButton{
+				tgbotapi.NewInlineKeyboardButtonData("⬅ Назад", "book:calendar_back"),
+			}),
+	)
+
+	msg.ParseMode = "MarkdownV2"
+	_, _ = h.bot.Send(msg)
 }
 
 func (h *Handler) handleBookCalendarBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
 	h.handleBook(ctx, cq.Message) // вернуться к выбору переговорки
-}
-
-func (h *Handler) askTimeInput(ctx context.Context, chatID int64, messageID int) {
-	text := getBookAskTimeInputText()
-	back := tgbotapi.NewInlineKeyboardButtonData("⬅ Назад", "book:calendar_back")
-	kb := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(back))
-
-	msg := tgbotapi.NewEditMessageTextAndMarkup(chatID, messageID, EscapeMarkdownV2(text), kb)
-	msg.ParseMode = "MarkdownV2"
-	_, _ = h.bot.Send(msg)
 }
 
 func (h *Handler) handleBookTimeBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
