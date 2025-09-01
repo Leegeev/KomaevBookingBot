@@ -129,26 +129,26 @@ func (h *Handler) handleBookCallback(ctx context.Context, cq *tgbotapi.CallbackQ
 	}
 }
 
-func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery, roomID int64) {
+func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery, id int64) {
 	h.answerCB(cq, "")
-	h.log.Info("Room selected", "user_id", cq.From.ID, "room_id", roomID)
-
-	room, err := h.uc.GetRoom(ctx, roomID)
+	room, err := h.uc.GetRoom(ctx, id)
 	if err != nil {
-		h.reply(cq.Message.Chat.ID, "Не удалось получить информацию о комнате.")
+		h.reply(cq.Message.Chat.ID, "Ошибка: не удалось получить переговорку.")
 		return
 	}
 
-	// Сохраняем выбор в сессию
-	session := h.getSession(cq.From.ID)
-	session.RoomID = roomID
-	session.RoomName = room.Name
-	session.ChatID = cq.Message.Chat.ID
-	session.MessageID = int64(cq.Message.MessageID)
-	h.saveSession(session)
+	// Создаем bookingSession и сохраняем в in-memory storage
+	h.sessions.Set(cq.From.ID, &bookingSession{
+		BookState: 1,
+		ChatID:    cq.Message.Chat.ID,
+		UserID:    int64(cq.From.ID),
+		MessageID: cq.Message.MessageID,
+		RoomID:    strconv.FormatInt(room.ID, 10),
+		RoomName:  room.Name,
+		Date:      time.Now().In(h.cfg.OfficeTZ).Truncate(24 * time.Hour),
+	})
 
-	// Переход к выбору даты (здесь заглушка)
-	h.reply(cq.Message.Chat.ID, fmt.Sprintf("Вы выбрали комнату *%s*. Теперь выберите дату.", room.Name))
+	h.showCalendar(ctx, cq.Message.Chat.ID, cq.Message.MessageID, time.Now().In(h.cfg.OfficeTZ))
 }
 
 func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {

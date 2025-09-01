@@ -154,21 +154,31 @@ type bookingSession struct {
 	Duration  time.Duration
 }
 
-func (h *Handler) getSession(userID int64) *bookingSession {
-	if s, ok := h.bookStore[userID]; ok {
+type sessionsStore struct {
+	data map[UserID]*bookingSession
+}
+
+func newSessionStore() *sessionsStore {
+	return &sessionsStore{
+		data: make(map[UserID]*bookingSession),
+	}
+}
+
+func (s *sessionsStore) getSession(userID int64) *bookingSession {
+	if s, ok := s.data[userID]; ok {
 		return s
 	}
 	newSession := &bookingSession{
 		UserID: userID,
 	}
-	h.bookStore[userID] = newSession
+	s.data[userID] = newSession
 	return newSession
 }
 
-func (h *Handler) saveSession(session *bookingSession) {
-	h.bookStore[session.UserID] = session
+func (s *sessionsStore) saveSession(session *bookingSession) {
+	s.data[session.UserID] = session
 }
 
-func (h *Handler) clearSession(userID int64) {
-	delete(h.bookStore, userID)
+func (s *sessionsStore) clearSession(userID int64) {
+	delete(s.data, userID)
 }

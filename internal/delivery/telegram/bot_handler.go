@@ -19,17 +19,17 @@ type Handler struct {
 	cfg       config.Telegram
 	log       logger.Logger
 	uc        *usecase.BookingService
-	bookStore map[UserID]*bookingSession // userID -> сессия бронирования
-	roleCache map[UserID]string          // userID -> роль (user/admin)
+	sessions  *sessionsStore    // userID -> сессия бронирования
+	roleCache map[UserID]string // userID -> роль (user/admin)
 }
 
 func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc *usecase.BookingService) *Handler {
 	return &Handler{
-		bot: bot,
-		cfg: cfg,
-		log: log,
-		uc:  uc,
-		// bookSess: make(map[int64]*bookingSession),
+		bot:      bot,
+		cfg:      cfg,
+		log:      log,
+		uc:       uc,
+		sessions: newSessionStore(),
 	}
 }
 
