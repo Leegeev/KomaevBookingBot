@@ -48,7 +48,7 @@ func (s *BookingService) CreateBooking(ctx context.Context, cmd CreateBookingCmd
 		return domain.ErrRoomNotFound
 	}
 
-	// Is it active?
+	// Check if room is active
 	if !room.IsActive {
 		s.logger.Error("Room is not active", "roomID", cmd.RoomID)
 		return domain.ErrRoomNotFound
@@ -62,7 +62,10 @@ func (s *BookingService) CreateBooking(ctx context.Context, cmd CreateBookingCmd
 	}
 
 	// Save booking to repository
-	if err := s.bookingRepo.Create(ctx, booking); err != nil {
+	err = s.bookingRepo.Create(ctx, booking)
+	if err == domain.ErrOverlapsExisting {
+		return err
+	} else if err != nil {
 		s.logger.Error("Failed to create booking", "error", err)
 		return err
 	}

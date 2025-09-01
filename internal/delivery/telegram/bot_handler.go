@@ -19,7 +19,7 @@ type Handler struct {
 	cfg       config.Telegram
 	log       logger.Logger
 	uc        *usecase.BookingService
-	bookSess  map[UserID]*bookingSession // userID -> сессия бронирования
+	bookStore map[UserID]*bookingSession // userID -> сессия бронирования
 	roleCache map[UserID]string          // userID -> роль (user/admin)
 }
 
@@ -82,15 +82,15 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 			case "help":
 				h.handleHelp(ctx, msg)
 
-				// functional handlers
+			// functional handlers
 			case "my":
 				h.handleMy(ctx, msg)
 			case "book":
-				h.handleBookStart(ctx, msg)
+				h.handleBook(ctx, msg)
 			case "schedule":
 				h.handleSchedule(ctx, msg)
 
-				// rooms handlers
+			// rooms handlers
 			case "create_room":
 				h.handleCreateRoom(ctx, msg)
 			case "deactivate_room":
@@ -113,16 +113,51 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	}
 
 	if upd.CallbackQuery != nil {
-		h.сallbackRouter(ctx, upd.CallbackQuery)
+		h.dispatchCallback(ctx, upd.CallbackQuery)
 		return
 	}
 }
 
-func (h *Handler) сallbackRouter(ctx context.Context, cbq *tgbotapi.CallbackQuery) {
+func (h *Handler) dispatchCallback(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	if cq == nil || cq.Data == "" {
+		h.log.Warn("Empty callback query received")
+		return
+	}
 
+	parts := strings.Split(cq.Data, ":")
+	if len(parts) < 2 {
+		h.log.Warn("Invalid callback data format", "data", cq.Data)
+		return
+	}
+
+	namespace := parts[0]
+
+	switch namespace {
+	case "my":
+		h.handleMyCallback(ctx, cq)
+
+	case "book":
+		h.handleBookCallback(ctx, cq)
+
+	// можно добавить другие пространства имён:
+	// case "admin":
+	// 	h.handleAdminCallback(ctx, cq)
+
+	default:
+		h.log.Warn("Unknown callback namespace", "namespace", namespace, "data", cq.Data)
+		h.answerCB(cq, "Неизвестное действие")
+	}
 }
 
 /* ------------ helpers ------------ */
+
+func (h *Handler) answerCB(cq *tgbotapi.CallbackQuery, text string) {
+	cb := tgbotapi.NewCallback(cq.ID, text)
+
+	if _, err := h.bot.Request(cb); err != nil {
+		h.log.Error("Failed to answer callback", "err", err, "data", cq.Data)
+	}
+}
 
 func (h *Handler) reply(chatID int64, text string) {
 	m := tgbotapi.NewMessage(chatID, text)

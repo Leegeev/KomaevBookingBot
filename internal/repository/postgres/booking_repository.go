@@ -34,8 +34,8 @@ func NewBookingRepositoryPG(db *sqlx.DB, logger logger.Logger) *bookingRepositor
 // methods
 
 func (r *bookingRepositoryPG) Create(ctx context.Context, b domain.Booking) error {
-	start := b.Range.Start // если у тебя Range: заменяй на b.Range.Start
-	end := b.Range.End     // если у тебя Range: заменяй на b.Range.End
+	start := b.Range.Start
+	end := b.Range.End
 
 	var (
 		newID     int64
@@ -55,7 +55,7 @@ func (r *bookingRepositoryPG) Create(ctx context.Context, b domain.Booking) erro
 		return mapPgOverlapErr(err)
 	}
 
-	b.ID = domain.BookingID(newID)
+	// b.ID = domain.BookingID(newID)
 	return nil
 }
 
