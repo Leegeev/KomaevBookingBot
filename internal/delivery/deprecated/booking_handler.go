@@ -12,16 +12,6 @@ import (
 	"github.com/leegeev/KomaevBookingBot/internal/usecase"
 )
 
-const (
-	StateIdle = iota
-	StateProcessingCommand
-	BookStateChoosingRoom
-	BookStateChoosingDate
-	BookStateChoosingStartTime
-	BookStateChoosingDuration
-	BookStateConfirmingBooking
-)
-
 type BookingSession struct {
 	BookState int64
 	ChatID    int64

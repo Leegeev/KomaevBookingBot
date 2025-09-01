@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
 
 /*
@@ -141,18 +142,33 @@ func getBookNoRoomsAvaibleText() string {
 	По этому вопросу обращаться к *администрации чата коллегии*`
 }
 
+func getBookAskTimeInputText() string {
+	return `Введите начало брони:
+(в формате xx:00 ИЛИ xx:30)`
+}
+
 type bookingSession struct {
 	BookState int64
 	ChatID    int64
 	UserID    int64
-	MessageID int64 // сообщение, которое редактируем
-	RoomID    int64
+	MessageID int // сообщение, которое редактируем
+	RoomID    domain.RoomID
 	RoomName  string
 	Date      time.Time // без времени, локаль офиса
 	StartTime time.Time // полноценный time с датой+временем
 	EndTime   time.Time
 	Duration  time.Duration
 }
+
+const (
+	StateIdle = iota
+	StateProcessingCommand
+	BookStateChoosingRoom
+	BookStateChoosingDate
+	BookStateChoosingStartTime
+	BookStateChoosingDuration
+	BookStateConfirmingBooking
+)
 
 type sessionsStore struct {
 	data map[UserID]*bookingSession
@@ -164,7 +180,7 @@ func newSessionStore() *sessionsStore {
 	}
 }
 
-func (s *sessionsStore) getSession(userID int64) *bookingSession {
+func (s *sessionsStore) Get(userID int64) *bookingSession {
 	if s, ok := s.data[userID]; ok {
 		return s
 	}
@@ -175,10 +191,10 @@ func (s *sessionsStore) getSession(userID int64) *bookingSession {
 	return newSession
 }
 
-func (s *sessionsStore) saveSession(session *bookingSession) {
+func (s *sessionsStore) Set(session *bookingSession) {
 	s.data[session.UserID] = session
 }
 
-func (s *sessionsStore) clearSession(userID int64) {
+func (s *sessionsStore) Delete(userID int64) {
 	delete(s.data, userID)
 }

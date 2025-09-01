@@ -138,17 +138,63 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 	}
 
 	// Создаем bookingSession и сохраняем в in-memory storage
-	h.sessions.Set(cq.From.ID, &bookingSession{
+	h.sessions.Set(&bookingSession{
 		BookState: 1,
 		ChatID:    cq.Message.Chat.ID,
-		UserID:    int64(cq.From.ID),
+		UserID:    cq.From.ID,
 		MessageID: cq.Message.MessageID,
-		RoomID:    strconv.FormatInt(room.ID, 10),
+		RoomID:    room.ID,
 		RoomName:  room.Name,
 		Date:      time.Now().In(h.cfg.OfficeTZ).Truncate(24 * time.Hour),
 	})
 
-	h.showCalendar(ctx, cq.Message.Chat.ID, cq.Message.MessageID, time.Now().In(h.cfg.OfficeTZ))
+	msg := tgbotapi.NewEditMessageTextAndMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		"📅 Выберите дату:",
+		buildCalendar(time.Now()),
+	)
+
+	msg.ParseMode = "MarkdownV2"
+	_, _ = h.bot.Send(msg)
+}
+
+func buildCalendar(start time.Time) tgbotapi.InlineKeyboardMarkup {
+	// Определим начало недели (понедельник)
+	offset := int(start.Weekday()) - 1 // Пн=0 ... Вс=6
+	if offset < 0 {
+		offset = 6 // если воскресенье
+	}
+	monday := start.AddDate(0, 0, -offset)
+
+	// Строка 1 — навигация
+	row1 := tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("⏪", "book:calendar_nav:-1"),
+		tgbotapi.NewInlineKeyboardButtonData("⏩", "book:calendar_nav:+1"),
+	)
+
+	// Строка 2 — дни недели
+	daysOfWeek := []string{"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"}
+	row2 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
+	for _, day := range daysOfWeek {
+		row2 = append(row2, tgbotapi.NewInlineKeyboardButtonData(day, "noop"))
+	}
+
+	// Строка 3 — конкретные даты
+	row3 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
+	for i := 0; i < 7; i++ {
+		day := monday.AddDate(0, 0, i)
+		display := day.Format("02.01")
+		callback := fmt.Sprintf("book:calendar:%s", day.Format("2006-01-02"))
+		row3 = append(row3, tgbotapi.NewInlineKeyboardButtonData(display, callback))
+	}
+
+	// Строка 4 — Назад
+	row4 := tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Назад", "book:list_back"),
+	)
+
+	return tgbotapi.NewInlineKeyboardMarkup(row1, row2, row3, row4)
 }
 
 func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
@@ -160,40 +206,104 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 }
 
 func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQuery, dateStr string) {
-	/*
-
-		тут предполагается, что ты ждёшь текстовое сообщение с временем начала
-		→
-		обрабатывай его в handleMessage и сверяй BookState.
-
-	*/
 	h.answerCB(cq, "")
-	h.log.Info("Date selected", "user_id", cq.From.ID, "date", dateStr)
 
-	date, err := time.Parse("2006-01-02", dateStr)
+	// Парсим дату
+	date, err := time.ParseInLocation("2006-01-02", dateStr, h.cfg.OfficeTZ)
 	if err != nil {
-		h.reply(cq.Message.Chat.ID, "Некорректная дата")
+		h.reply(cq.Message.Chat.ID, "Ошибка: неправильная дата")
 		return
 	}
 
-	session := h.getSession(cq.From.ID)
-	session.Date = date
-	h.saveSession(session)
+	session := h.sessions.Get(cq.From.ID)
+	if session == nil {
+		h.reply(cq.Message.Chat.ID, "Сессия не найдена")
+		return
+	}
 
-	// Переход к выбору времени
-	h.reply(cq.Message.Chat.ID, fmt.Sprintf("Вы выбрали дату *%s*. Теперь введите время начала (например, 13:30).", date.Format("02.01")))
+	session.Date = date
+
+	h.askTimeInput(ctx, cq.Message.Chat.ID, cq.Message.MessageID)
 }
 
 func (h *Handler) handleBookCalendarBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
-	h.log.Info("User clicked 'Назад' на календаре", "user_id", cq.From.ID)
-
-	// TODO: вернуться к списку комнат
-	h.reply(cq.Message.Chat.ID, "Назад к выбору комнаты.")
+	h.handleBook(ctx, cq.Message) // вернуться к выбору переговорки
 }
 
-func (h *Handler) handleBookTimeBack(ctx context.Context, cq *tgbotapi.CallbackQuery, duration string) {
+func (h *Handler) askTimeInput(ctx context.Context, chatID int64, messageID int) {
+	text := getBookAskTimeInputText()
+	back := tgbotapi.NewInlineKeyboardButtonData("⬅ Назад", "book:calendar_back")
+	kb := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(back))
+
+	msg := tgbotapi.NewEditMessageTextAndMarkup(chatID, messageID, EscapeMarkdownV2(text), kb)
+	msg.ParseMode = "MarkdownV2"
+	_, _ = h.bot.Send(msg)
 }
+
+func (h *Handler) handleBookTimeBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	h.answerCB(cq, "")
+	session := h.sessions.Get(cq.From.ID)
+	if session == nil {
+		h.reply(cq.Message.Chat.ID, "Сессия не найдена")
+		return
+	}
+	h.showCalendar(ctx, cq.Message.Chat.ID, cq.Message.MessageID, session.Date)
+}
+
+func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQuery, durStr string) {
+	h.answerCB(cq, "")
+	session := h.sessions.Get(cq.From.ID)
+	if session == nil {
+		h.reply(cq.Message.Chat.ID, "Сессия не найдена")
+		return
+	}
+
+	durF, err := strconv.ParseFloat(durStr, 64)
+	if err != nil {
+		h.reply(cq.Message.Chat.ID, "Ошибка: неправильная длительность")
+		return
+	}
+
+	session.Duration = time.Duration(durF * float64(time.Hour))
+	session.EndTime = session.StartTime.Add(session.Duration)
+
+	h.askConfirmation(ctx, cq.Message.Chat.ID, cq.Message.MessageID, session)
+}
+
+func (h *Handler) handleBookDurationBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	h.answerCB(cq, "")
+	h.askTimeInput(ctx, cq.Message.Chat.ID, cq.Message.MessageID)
+}
+
+func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQuery, confirm bool) {
+	h.answerCB(cq, "")
+	session := h.sessions.Get(cq.From.ID)
+	if session == nil {
+		h.reply(cq.Message.Chat.ID, "Сессия не найдена")
+		return
+	}
+
+	if confirm {
+		err := h.uc.CreateBooking(ctx, *session)
+		if err != nil {
+			h.reply(cq.Message.Chat.ID, "Ошибка при создании брони: "+err.Error())
+			return
+		}
+		h.reply(cq.Message.Chat.ID, "✅ Бронь успешно создана!")
+	} else {
+		h.reply(cq.Message.Chat.ID, "❌ Бронь отменена.")
+	}
+
+	h.sessions.Delete(cq.From.ID)
+}
+
+func (h *Handler) handleBookConfirmBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	h.answerCB(cq, "")
+	h.askDuration(ctx, cq.Message.Chat.ID, cq.Message.MessageID)
+}
+
+/*
 
 func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQuery, durationStr string) {
 	h.answerCB(cq, "")
@@ -247,23 +357,4 @@ func (h *Handler) handleBookDurationBack(ctx context.Context, cq *tgbotapi.Callb
 	h.reply(cq.Message.Chat.ID, "Назад к выбору времени.")
 }
 
-func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQuery, confirmed bool) {
-	h.answerCB(cq, "")
-	if confirmed {
-		h.log.Info("User confirmed booking", "user_id", cq.From.ID)
-		// TODO: сохранить бронь в БД
-		h.reply(cq.Message.Chat.ID, "✅ Ваша бронь успешно создана.")
-	} else {
-		h.log.Info("User cancelled booking confirmation", "user_id", cq.From.ID)
-		// TODO: вернуться к выбору параметров
-		h.reply(cq.Message.Chat.ID, "Бронирование отменено.")
-	}
-}
-
-func (h *Handler) handleBookConfirmBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	h.answerCB(cq, "")
-	h.log.Info("User clicked 'Назад' на подтверждении", "user_id", cq.From.ID)
-
-	// TODO: вернуться к выбору длительности
-	h.reply(cq.Message.Chat.ID, "Назад к выбору длительности.")
-}
+*/
