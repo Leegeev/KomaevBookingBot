@@ -64,3 +64,64 @@ func buildCalendarMarkup(current time.Time, officeTZ *time.Location) tgbotapi.In
 func btnNoop(text string) tgbotapi.InlineKeyboardButton {
 	return tgbotapi.NewInlineKeyboardButtonData(text, "noop")
 }
+
+func buildCalendar(start time.Time) tgbotapi.InlineKeyboardMarkup {
+	// Определим начало недели (понедельник)
+	offset := int(start.Weekday()) - 1 // Пн=0 ... Вс=6
+	if offset < 0 {
+		offset = 6 // если воскресенье
+	}
+	monday := start.AddDate(0, 0, -offset)
+
+	// Строка 1 — навигация
+	row1 := tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("⏪", "book:calendar_nav:-1"),
+		tgbotapi.NewInlineKeyboardButtonData("⏩", "book:calendar_nav:+1"),
+	)
+
+	// Строка 2 — дни недели
+	daysOfWeek := []string{"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"}
+	row2 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
+	for _, day := range daysOfWeek {
+		row2 = append(row2, tgbotapi.NewInlineKeyboardButtonData(day, "noop"))
+	}
+
+	// Строка 3 — конкретные даты
+	row3 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
+	for i := 0; i < 7; i++ {
+		day := monday.AddDate(0, 0, i)
+		display := day.Format("02.01")
+		callback := fmt.Sprintf("book:calendar:%s", day.Format("2006-01-02"))
+		row3 = append(row3, tgbotapi.NewInlineKeyboardButtonData(display, callback))
+	}
+
+	// Строка 4 — Назад
+	row4 := tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("🔙 Назад", "book:list_back"),
+	)
+
+	return tgbotapi.NewInlineKeyboardMarkup(row1, row2, row3, row4)
+}
+
+
+
+
+
+	// Строка 2 — дни недели
+	row2 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
+	daysOfWeek := []string{"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"}
+	today := time.Now()
+	todayW := int(today.Weekday())
+	for i := 0; i < 7; i++ {
+		dayIndex := (todayW + i) % 7
+		row2 = append(row2, tgbotapi.NewInlineKeyboardButtonData(daysOfWeek[dayIndex], "noop"))
+	}
+
+	// Строка 3 — конкретные даты
+	row3 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
+	for i := 0; i < 7; i++ {
+		day := today.AddDate(0, 0, i)
+		display := day.Format("02.01")
+		callback := fmt.Sprintf("book:calendar:%s", day.Format("2006-01-02"))
+		row3 = append(row3, tgbotapi.NewInlineKeyboardButtonData(display, callback))
+	}

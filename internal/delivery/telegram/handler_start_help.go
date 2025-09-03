@@ -25,20 +25,18 @@ func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
 		"user_id", msg.From.ID,
 		"chat_id", msg.Chat.ID)
 
-	msgText := getStartMessageText()
+	msgText := startMessageText.String()
 
 	role, err := h.getRole(ctx, msg.From.ID)
 	if err != nil {
 		h.log.Error("Failed to get user role in start command", "user_id", msg.From.ID, "err", err)
 	} else {
 		if role == Administrator || role == Creator {
-			msgText += "\n\n" + getAdminStartMessageText()
+			msgText += "\n\n" + adminStartMessageText.String()
 		}
 	}
 
-	escaped := EscapeMarkdownV2(msgText)
-
-	msgOut := tgbotapi.NewMessage(msg.Chat.ID, escaped)
+	msgOut := tgbotapi.NewMessage(msg.Chat.ID, msgText)
 	msgOut.ParseMode = "MarkdownV2"
 
 	if _, err := h.bot.Send(msgOut); err != nil {
@@ -64,20 +62,18 @@ func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
 		"user_id", msg.From.ID,
 		"chat_id", msg.Chat.ID)
 
-	msgText := getHelpMessageText()
+	msgText := helpMessageText.String()
 
 	role, err := h.getRole(ctx, msg.From.ID)
 	if err != nil {
 		h.log.Error("Failed to get user role in help command", "user_id", msg.From.ID, "err", err)
 	} else {
 		if role == Administrator || role == Creator {
-			msgText += "\n\n" + getAdminHelpMessageText()
+			msgText += "\n\n" + adminHelpMessageText.String()
 		}
 	}
 
-	escaped := EscapeMarkdownV2(msgText)
-
-	msgOut := tgbotapi.NewMessage(msg.Chat.ID, escaped)
+	msgOut := tgbotapi.NewMessage(msg.Chat.ID, msgText)
 	msgOut.ParseMode = "MarkdownV2"
 
 	if _, err := h.bot.Send(msgOut); err != nil {
