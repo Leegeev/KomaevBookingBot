@@ -2,10 +2,15 @@ package telegram
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram/tools"
+	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
 
 // Step 0.
@@ -24,12 +29,20 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 		"user_id", msg.From.ID,
 		"chat_id", msg.Chat.ID)
 
-	rows, err := h.buildRoomListKB(ctx, msg.From.ID)
-	if err != nil {
-		h.reply(msg.Chat.ID, err.Error())
+	rooms, err := h.uc.ListRooms(ctx)
+	if errors.Is(err, domain.ErrNoRoomsAvailable) {
+		h.reply(msg.From.ID, tools.TextBookNoRoomsAvailable.String())
+		return
+	} else if err != nil {
+		h.log.Error("Failed to list rooms", "user_id", msg.From.ID, "error", err)
+		h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при /book:* `%s`", err.Error()))
+		h.reply(msg.From.ID, tools.TextBookNoRoomsErr.String())
+		return
 	}
 
-	m := tgbotapi.NewMessage(msg.Chat.ID, bookIntroductionText.String())
+	rows := tools.BuildRoomListKB(ctx, rooms)
+
+	m := tgbotapi.NewMessage(msg.Chat.ID, tools.TextBookIntroduction.String())
 	m.ParseMode = "MarkdownV2"
 	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
 
@@ -41,8 +54,12 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 // Step 0.
 // Хендлер выбора переговорки
 // Строит календарь
-func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery, id int64) {
+func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
+
+	parts := strings.Split(cq.Data, ":")
+	id, _ := strconv.ParseInt(parts[2], 10, 64)
+
 	room, err := h.uc.GetRoom(ctx, id)
 	if err != nil {
 		h.reply(cq.Message.Chat.ID, "Ошибка: не удалось получить переговорку.")
@@ -50,7 +67,7 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 	}
 
 	// Создаем bookingSession и сохраняем в in-memory storage
-	h.sessions.Set(&bookingSession{
+	h.sessions.Set(&tools.BookingSession{
 		BookState: 1,
 		ChatID:    cq.Message.Chat.ID,
 		UserID:    cq.From.ID,
@@ -63,8 +80,8 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 	msg := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		EscapeMarkdownV2(bookCalendarText.String()),
-		h.buildCalendarKB(time.Now()),
+		tools.TextBookCalendar.String(),
+		tools.BuildCalendarKB(time.Now()),
 	)
 
 	msg.ParseMode = "MarkdownV2"
@@ -74,8 +91,11 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 // Step 1.
 // Парсит callback Дату из календаря (получает дату в local tz)
 // Редактирует сообщение на ввод времени
-func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQuery, dateStr string) {
+func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
+
+	parts := strings.Split(cq.Data, ":")
+	dateStr := parts[2] // формат даты предполагается как "YYYY-MM-DD"
 
 	// Парсим дату
 	date, err := time.ParseInLocation("2006-01-02", dateStr, h.cfg.OfficeTZ)
@@ -95,7 +115,7 @@ func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQ
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		EscapeMarkdownV2(bookAskTimeInputText.String()),
+		tools.TextBookAskTimeInput.String(),
 		tgbotapi.NewInlineKeyboardMarkup(
 			[]tgbotapi.InlineKeyboardButton{
 				tgbotapi.NewInlineKeyboardButtonData("⬅ Назад", "book:timepick_back"),
@@ -135,8 +155,8 @@ func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message)
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		msg.Chat.ID,
 		msg.MessageID,
-		EscapeMarkdownV2(bookAskDurationText.String()),
-		h.buildDurationKB(),
+		tools.TextBookAskDuration.String(),
+		tools.BuildDurationKB(),
 	)
 
 	edit.ParseMode = "MarkdownV2"
@@ -145,15 +165,12 @@ func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message)
 	}
 }
 
-func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQuery, durStr string) {
+func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
-	if err := ctx.Err(); err != nil {
-		h.log.Warn("Context canceled in /my handler",
-			"user", msg.From.UserName,
-			"chat_id", msg.Chat.ID,
-			"err", ctx.Err())
-		return
-	}
+
+	parts := strings.Split(cq.Data, ":")
+	durStr := parts[2] // формат даты предполагается как "YYYY-MM-DD"
+
 	session := h.sessions.Get(cq.From.ID)
 	if session == nil {
 		h.reply(cq.Message.Chat.ID, "Сессия не найдена")
@@ -172,15 +189,19 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 	h.askConfirmation(ctx, cq.Message.Chat.ID, cq.Message.MessageID, session)
 }
 
-func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQuery, confirm bool) {
+func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
+
+	parts := strings.Split(cq.Data, ":")
+	confirm, _ := strconv.ParseInt(parts[2], 10, 64) // 0 || 1
+
 	session := h.sessions.Get(cq.From.ID)
 	if session == nil {
 		h.reply(cq.Message.Chat.ID, "Сессия не найдена")
 		return
 	}
 
-	if confirm {
+	if confirm == 1 {
 		err := h.uc.CreateBooking(ctx, *session)
 		if err != nil {
 			h.reply(cq.Message.Chat.ID, "Ошибка при создании брони: "+err.Error())

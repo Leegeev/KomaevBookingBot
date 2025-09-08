@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram/tools"
 )
 
 /* ---------- /my ---------- */
@@ -59,7 +60,7 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 	btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
 
-	m := tgbotapi.NewMessage(msg.Chat.ID, EscapeMarkdownV2(text))
+	m := tgbotapi.NewMessage(msg.Chat.ID, tools.EscapeMarkdownV2(text))
 	m.ParseMode = "MarkdownV2"
 	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
 

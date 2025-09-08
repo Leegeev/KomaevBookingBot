@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
 	// "time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
+	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram/tools"
 	"github.com/leegeev/KomaevBookingBot/internal/usecase"
 	"github.com/leegeev/KomaevBookingBot/pkg/config"
 	"github.com/leegeev/KomaevBookingBot/pkg/logger"
@@ -15,12 +17,12 @@ import (
 
 // Основной хэндлер
 type Handler struct {
-	bot       *tgbotapi.BotAPI
-	cfg       config.Telegram
-	log       logger.Logger
-	uc        *usecase.BookingService
-	sessions  *sessionsStore    // userID -> сессия бронирования
-	roleCache map[UserID]string // userID -> роль (user/admin)
+	bot      *tgbotapi.BotAPI
+	cfg      config.Telegram
+	log      logger.Logger
+	uc       *usecase.BookingService
+	sessions *tools.SessionsStore // userID -> сессия бронирования
+	// roleCache map[UserID]string    // userID -> роль (user/admin)
 
 	commandHandlers  map[string]func(ctx context.Context, msg *tgbotapi.Message)
 	callbackHandlers map[string]func(ctx context.Context, cq *tgbotapi.CallbackQuery)
@@ -32,7 +34,7 @@ func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc
 		cfg:              cfg,
 		log:              log,
 		uc:               uc,
-		sessions:         newSessionStore(),
+		sessions:         tools.NewSessionStore(),
 		commandHandlers:  make(map[string]func(ctx context.Context, msg *tgbotapi.Message)),
 		callbackHandlers: make(map[string]func(ctx context.Context, cq *tgbotapi.CallbackQuery)),
 	}
@@ -78,7 +80,17 @@ func (h *Handler) registerRoutes() {
 
 	// callbacks
 	// h.commandHandlers["my"] = h.handleMyCallback
-	h.callbackHandlers["book"] = h.handleBookCallback
+	h.callbackHandlers["book:list"] = h.handleBookList
+	h.callbackHandlers["book:calendar"] = h.handleBookCalendar
+	h.callbackHandlers["book:duration"] = h.handleBookDuration
+	h.callbackHandlers["book:confirm"] = h.handleBookConfirm
+
+	h.callbackHandlers["book:list_back"] = h.handleBookListBack
+	h.callbackHandlers["book:calendar_back"] = h.handleBookCalendarBack
+	h.callbackHandlers["book:timepick_back"] = h.handleBookTimepickBack
+	h.callbackHandlers["book:duration_back"] = h.handleBookDurationBack
+	h.callbackHandlers["book:confirm_back"] = h.handleBookConfirmBack
+
 	// h.commandHandlers["create_room"] = h.handleCreateRoomCallback
 	// h.commandHandlers["deactivate_room"] = h.handleDeactivateRoomCallback
 }

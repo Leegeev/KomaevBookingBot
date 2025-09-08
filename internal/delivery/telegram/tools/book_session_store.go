@@ -6,7 +6,7 @@ import (
 	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
 
-type bookingSession struct {
+type BookingSession struct {
 	BookState int64
 	ChatID    int64
 	UserID    int64
@@ -29,31 +29,31 @@ const (
 	BookStateConfirmingBooking
 )
 
-type sessionsStore struct {
-	data map[int64]*bookingSession
+type SessionsStore struct {
+	data map[int64]*BookingSession
 }
 
-func newSessionStore() *sessionsStore {
-	return &sessionsStore{
-		data: make(map[int64]*bookingSession),
+func NewSessionStore() *SessionsStore {
+	return &SessionsStore{
+		data: make(map[int64]*BookingSession),
 	}
 }
 
-func (s *sessionsStore) Get(userID int64) *bookingSession {
+func (s *SessionsStore) Get(userID int64) *BookingSession {
 	if s, ok := s.data[userID]; ok {
 		return s
 	}
-	newSession := &bookingSession{
+	newSession := &BookingSession{
 		UserID: userID,
 	}
 	s.data[userID] = newSession
 	return newSession
 }
 
-func (s *sessionsStore) Set(session *bookingSession) {
+func (s *SessionsStore) Set(session *BookingSession) {
 	s.data[session.UserID] = session
 }
 
-func (s *sessionsStore) Delete(userID int64) {
+func (s *SessionsStore) Delete(userID int64) {
 	delete(s.data, userID)
 }

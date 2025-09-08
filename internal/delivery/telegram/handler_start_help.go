@@ -7,6 +7,7 @@ import (
 	// "strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram/tools"
 	// "github.com/leegeev/KomaevBookingBot/internal/domain"
 )
 
@@ -25,14 +26,14 @@ func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
 		"user_id", msg.From.ID,
 		"chat_id", msg.Chat.ID)
 
-	msgText := startMessageText.String()
+	msgText := tools.TextStartMessage.String()
 
 	role, err := h.getRole(ctx, msg.From.ID)
 	if err != nil {
 		h.log.Error("Failed to get user role in start command", "user_id", msg.From.ID, "err", err)
 	} else {
 		if role == Administrator || role == Creator {
-			msgText += "\n\n" + adminStartMessageText.String()
+			msgText += "\n\n" + tools.TextAdminStartMessage.String()
 		}
 	}
 
@@ -62,14 +63,14 @@ func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
 		"user_id", msg.From.ID,
 		"chat_id", msg.Chat.ID)
 
-	msgText := helpMessageText.String()
+	msgText := tools.TextHelpMessage.String()
 
 	role, err := h.getRole(ctx, msg.From.ID)
 	if err != nil {
 		h.log.Error("Failed to get user role in help command", "user_id", msg.From.ID, "err", err)
 	} else {
 		if role == Administrator || role == Creator {
-			msgText += "\n\n" + adminHelpMessageText.String()
+			msgText += "\n\n" + tools.TextAdminHelpMessage.String()
 		}
 	}
 

@@ -38,10 +38,12 @@ func (h *Handler) handleBookCalendarBack(ctx context.Context, cq *tgbotapi.Callb
 
 	rooms, err := h.uc.ListRooms(ctx)
 	if errors.Is(err, domain.ErrNoRoomsAvailable) {
+		h.reply(cq.From.ID, tools.TextBookNoRoomsAvailable.String())
 		return
 	} else if err != nil {
 		h.log.Error("Failed to list rooms", "user_id", cq.From.ID, "error", err)
 		h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при /book:* `%s`", err.Error()))
+		h.reply(cq.From.ID, tools.TextBookNoRoomsErr.String())
 		return
 	}
 
@@ -59,7 +61,7 @@ func (h *Handler) handleBookCalendarBack(ctx context.Context, cq *tgbotapi.Callb
 	}
 }
 
-func (h *Handler) handleBookTimepickBack(ctx context.Context, msg *tgbotapi.Message) {
+func (h *Handler) handleBookTimepickBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	return
 }
 
