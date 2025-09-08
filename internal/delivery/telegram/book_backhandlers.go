@@ -2,8 +2,12 @@ package telegram
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram/tools"
+	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
 
 // Step 0.
@@ -15,8 +19,8 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 	msg := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		EscapeMarkdownV2(mainMenuText.String()),
-		blankInlineKB(),
+		tools.TextMainMenu.String(),
+		tools.BuildBlankInlineKB(),
 	)
 
 	msg.ParseMode = "MarkdownV2"
@@ -30,21 +34,22 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 // Хендлер кнопки назад в календаре
 func (h *Handler) handleBookCalendarBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "") // Убираем часики и не показываем уведомление
-
 	h.log.Info("User clicked 'Назад' on calendar", "user_id", cq.From.ID)
 
-	rows, err := h.buildRoomListKB(ctx, cq.From.ID)
-	if err != nil {
-		h.log.Error("Failed to build room list on calendar back", "user_id", cq.From.ID, "err", err)
-		// Не можем редактировать сообщение, поэтому отправим новое
-		h.reply(cq.Message.Chat.ID, err.Error())
+	rooms, err := h.uc.ListRooms(ctx)
+	if errors.Is(err, domain.ErrNoRoomsAvailable) {
+		return
+	} else if err != nil {
+		h.log.Error("Failed to list rooms", "user_id", cq.From.ID, "error", err)
+		h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при /book:* `%s`", err.Error()))
 		return
 	}
 
+	rows := tools.BuildRoomListKB(ctx, rooms)
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		EscapeMarkdownV2(bookIntroductionText.String()),
+		tools.TextBookIntroduction.String(),
 		tgbotapi.NewInlineKeyboardMarkup(rows...),
 	)
 	edit.ParseMode = "MarkdownV2"

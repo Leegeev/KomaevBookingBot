@@ -21,15 +21,20 @@ type Handler struct {
 	uc        *usecase.BookingService
 	sessions  *sessionsStore    // userID -> сессия бронирования
 	roleCache map[UserID]string // userID -> роль (user/admin)
+
+	commandHandlers  map[string]func(ctx context.Context, msg *tgbotapi.Message)
+	callbackHandlers map[string]func(ctx context.Context, cq *tgbotapi.CallbackQuery)
 }
 
 func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc *usecase.BookingService) *Handler {
 	return &Handler{
-		bot:      bot,
-		cfg:      cfg,
-		log:      log,
-		uc:       uc,
-		sessions: newSessionStore(),
+		bot:              bot,
+		cfg:              cfg,
+		log:              log,
+		uc:               uc,
+		sessions:         newSessionStore(),
+		commandHandlers:  make(map[string]func(ctx context.Context, msg *tgbotapi.Message)),
+		callbackHandlers: make(map[string]func(ctx context.Context, cq *tgbotapi.CallbackQuery)),
 	}
 }
 
@@ -42,6 +47,7 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 30
+	h.registerRoutes()
 	// updateConfig.AllowedUpdates = []string{"message", "callback_query"}
 
 	updates := h.bot.GetUpdatesChan(updateConfig)
@@ -60,9 +66,22 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 	}
 }
 
-// Note that panics are a bad way to handle errors. Telegram can
-// have service outages or network errors, you should retry sending
-// messages or more gracefully handle failures.
+func (h *Handler) registerRoutes() {
+	// commands
+	h.commandHandlers["start"] = h.handleStart
+	h.commandHandlers["help"] = h.handleHelp
+	h.commandHandlers["my"] = h.handleMy
+	h.commandHandlers["book"] = h.handleBook
+	h.commandHandlers["schedule"] = h.handleSchedule
+	h.commandHandlers["create_room"] = h.handleCreateRoom
+	h.commandHandlers["deactivate_room"] = h.handleDeactivateRoom
+
+	// callbacks
+	// h.commandHandlers["my"] = h.handleMyCallback
+	h.callbackHandlers["book"] = h.handleBookCallback
+	// h.commandHandlers["create_room"] = h.handleCreateRoomCallback
+	// h.commandHandlers["deactivate_room"] = h.handleDeactivateRoomCallback
+}
 
 func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	defer func() {
@@ -71,81 +90,29 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 		}
 	}()
 
-	if upd.Message != nil {
-		msg := upd.Message
-		if msg.IsCommand() {
-			switch msg.Command() {
-
-			// info handlers
-			case "start":
-				h.handleStart(ctx, msg)
-			case "help":
-				h.handleHelp(ctx, msg)
-
-			// functional handlers
-			case "my":
-				h.handleMy(ctx, msg)
-			case "book":
-				h.handleBook(ctx, msg)
-			case "schedule":
-				h.handleSchedule(ctx, msg)
-
-			// rooms handlers
-			case "create_room":
-				h.handleCreateRoom(ctx, msg)
-			case "deactivate_room":
-				h.handleDeactivateRoom(ctx, msg)
-
-				// case "rooms":
-				// h.handleRooms(ctx, msg)
-				// case "cancel":
-				// h.handleCancelCommand(ctx, msg)
-			default:
-				h.reply(msg.Chat.ID, "Неизвестная команда. Смотри /help")
-			}
-			return
-		}
-
-		if strings.TrimSpace(msg.Text) != "" {
-			h.reply(msg.Chat.ID, "Не понял. Смотри /help")
+	if upd.Message.IsCommand() {
+		cmd := upd.Message.Command()
+		if handler, ok := h.commandHandlers[cmd]; ok {
+			handler(ctx, upd.Message)
+		} else {
+			h.reply(upd.Message.Chat.ID, "Неизвестная команда. Смотри /help")
 		}
 		return
 	}
 
 	if upd.CallbackQuery != nil {
-		h.dispatchCallback(ctx, upd.CallbackQuery)
-		return
-	}
-}
-
-func (h *Handler) dispatchCallback(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	if cq == nil || cq.Data == "" {
-		h.log.Warn("Empty callback query received")
+		cb := strings.Split(upd.CallbackQuery.Data, ":")
+		prefix := cb[0]
+		if handler, ok := h.callbackHandlers[prefix]; ok {
+			handler(ctx, upd.CallbackQuery)
+		}
 		return
 	}
 
-	parts := strings.Split(cq.Data, ":")
-	if len(parts) < 2 {
-		h.log.Warn("Invalid callback data format", "data", cq.Data)
+	if upd.Message != nil {
+		//check if it is time input
+		// else
 		return
-	}
-
-	namespace := parts[0]
-
-	switch namespace {
-	case "my":
-		h.handleMyCallback(ctx, cq)
-
-	case "book":
-		h.handleBookCallback(ctx, cq)
-
-	// можно добавить другие пространства имён:
-	// case "admin":
-	// 	h.handleAdminCallback(ctx, cq)
-
-	default:
-		h.log.Warn("Unknown callback namespace", "namespace", namespace, "data", cq.Data)
-		h.answerCB(cq, "Неизвестное действие")
 	}
 }
 

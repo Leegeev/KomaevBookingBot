@@ -1,8 +1,7 @@
-package telegram
+package tools
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -12,22 +11,13 @@ import (
 
 // Step -1.
 // Возвращает пустую клавиатуру для выхода в главное меню
-func blankInlineKB() tgbotapi.InlineKeyboardMarkup {
+func BuildBlankInlineKB() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{}}
 }
 
 // Step 0.
 // /book Строит инлайн клавиатуру с переговорками
-func (h *Handler) buildRoomListKB(ctx context.Context, userID int64) ([][]tgbotapi.InlineKeyboardButton, error) {
-	rooms, err := h.uc.ListRooms(ctx)
-	if errors.Is(err, domain.ErrNoRoomsAvailable) {
-		return nil, errors.New(bookNoRoomsAvailableText.String())
-	} else if err != nil {
-		h.log.Error("Failed to list rooms", "user_id", userID, "error", err)
-		h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при /book:* `%s`", err.Error()))
-		return nil, errors.New("Возникла ошибка при получении доступных комнат.")
-	}
-
+func BuildRoomListKB(ctx context.Context, rooms []domain.Room) [][]tgbotapi.InlineKeyboardButton {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, len(rooms))
 	for _, room := range rooms {
 		if !room.IsActive {
@@ -39,20 +29,16 @@ func (h *Handler) buildRoomListKB(ctx context.Context, userID int64) ([][]tgbota
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
 	}
 
-	if len(rows) == 0 {
-		return nil, errors.New(bookNoRoomsAvailableText.String())
-	}
-
 	// Кнопка "Назад"
 	backBtn := tgbotapi.NewInlineKeyboardButtonData("Назад", "book:list_back")
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(backBtn))
 
-	return rows, nil
+	return rows
 }
 
 // Step 1.
 // Строит календарь. Вызывается из хендлера.
-func (h *Handler) buildCalendarKB(start time.Time) tgbotapi.InlineKeyboardMarkup {
+func BuildCalendarKB(start time.Time) tgbotapi.InlineKeyboardMarkup {
 	// Строка 1 — навигация
 	row1 := tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("⏪", "book:calendar_nav:-1"),
@@ -90,7 +76,7 @@ func (h *Handler) buildCalendarKB(start time.Time) tgbotapi.InlineKeyboardMarkup
 
 // Step 2.
 // Строит клавиатуру для выбора длительности брони.
-func (h *Handler) buildDurationKB() tgbotapi.InlineKeyboardMarkup {
+func BuildDurationKB() tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 4)
 
 	for i := 1; i <= 8; i += 2 {
