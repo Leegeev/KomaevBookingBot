@@ -139,18 +139,22 @@ func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQ
 // Step 2.
 // Обработчик РУЧНОГО ввода времени.
 func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message) {
-	if err := ctx.Err(); err != nil {
-		h.log.Warn("Context canceled in /my handler",
-			"user", msg.From.UserName,
-			"chat_id", msg.Chat.ID,
-			"err", ctx.Err())
-		return
-	}
-
 	h.log.Info("Received users book time input",
 		"user", msg.From.UserName,
 		"user_id", msg.From.ID,
 		"chat_id", msg.Chat.ID)
+
+	startTime, err := tools.ParseTimePick(msg.Text)
+	if err != nil {
+		reply := tgbotapi.NewMessage(msg.Chat.ID, tools.TextBookTimeInvalidInput.String())
+		reply.ParseMode = "MarkdownV2"
+
+		if _, sendErr := h.bot.Send(reply); sendErr != nil {
+			h.log.Error("Failed to send invalid time format message", "err", sendErr)
+		}
+		return
+	}
+
 	session := h.sessions.Get(msg.From.ID)
 
 	if session == nil {
@@ -158,11 +162,11 @@ func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message)
 		return
 	}
 
-	session.StartTime = h.parseTimePick(ctx, msg.Text)
+	session.StartTime = startTime
 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		msg.Chat.ID,
-		msg.MessageID,
+		session.MessageID,
 		tools.TextBookAskTimeInput.String(),
 		tools.BuildBlankInlineKB(),
 	)
@@ -251,9 +255,9 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 			h.reply(cq.Message.Chat.ID, "Ошибка при создании брони: "+err.Error())
 			return
 		}
-		text = "✅ Бронь успешно создана!"
+		text = tools.TextBookYes.String()
 	} else {
-		text = "❌ Бронь отменена."
+		text = tools.TextBookNo.String()
 	}
 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
