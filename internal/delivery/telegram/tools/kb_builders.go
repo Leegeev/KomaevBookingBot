@@ -15,6 +15,10 @@ func BuildBlankInlineKB() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.InlineKeyboardMarkup{InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{}}
 }
 
+func BuildBackInlineKBButton(data string) tgbotapi.InlineKeyboardButton {
+	return tgbotapi.NewInlineKeyboardButtonData(TextBackInlineKBButton, data)
+}
+
 // Step 0.
 // /book Строит инлайн клавиатуру с переговорками
 func BuildRoomListKB(ctx context.Context, rooms []domain.Room) [][]tgbotapi.InlineKeyboardButton {
@@ -30,8 +34,7 @@ func BuildRoomListKB(ctx context.Context, rooms []domain.Room) [][]tgbotapi.Inli
 	}
 
 	// Кнопка "Назад"
-	backBtn := tgbotapi.NewInlineKeyboardButtonData("Назад", "book:list_back")
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(backBtn))
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("book:list_back")))
 
 	return rows
 }
@@ -67,9 +70,7 @@ func BuildCalendarKB(start time.Time) tgbotapi.InlineKeyboardMarkup {
 	}
 
 	// Строка 4 — Назад
-	row4 := tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("🔙 Назад", "book:calendar_back"),
-	)
+	row4 := tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("book:calendar_back"))
 
 	return tgbotapi.NewInlineKeyboardMarkup(row1, row2, row3, row4)
 }
@@ -99,10 +100,13 @@ func BuildDurationKB() tgbotapi.InlineKeyboardMarkup {
 	}
 
 	// Добавим кнопку "Назад"
-	backBtn := tgbotapi.NewInlineKeyboardButtonData("⬅ Назад", "book:duration_back")
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(backBtn))
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("book:duration_back")))
 
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+func BuildConfirmationKB() tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup()
 }
 
 func formatDurationButtonText(d float64) string {

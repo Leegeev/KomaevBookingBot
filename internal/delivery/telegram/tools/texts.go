@@ -2,6 +2,8 @@ package tools
 
 import "strings"
 
+const TextBackInlineKBButton = "🔙 Назад"
+
 // тексты главного меню
 const (
 	TextMainMenu     SafeText = "Вы в главном меню"
@@ -45,6 +47,25 @@ const (
 
 	TextBookAskDuration SafeText = "🕗 Выберите продолжительность:"
 )
+
+/*
+// где-то в коде
+text := fmt.Sprintf(
+
+	TextBookAskConfirmation.String(),
+	roomName,
+	date.Format("02.01.2006"),
+	startTime.Format("15:04"),
+	duration,
+
+)
+*/
+var TextBookAskConfirmation SafeText = `Подтвердите детали брони:
+Переговорка: %s
+Дата: %s
+Начало: %s
+Продолжительность: %s
+`
 
 // EscapeMarkdownV2 безопасно экранирует текст для Telegram MarkdownV2
 func EscapeMarkdownV2(text string) string {

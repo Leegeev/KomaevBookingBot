@@ -11,6 +11,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram/tools"
 	"github.com/leegeev/KomaevBookingBot/internal/domain"
+	"github.com/leegeev/KomaevBookingBot/internal/usecase"
 )
 
 // Step 0.
@@ -77,15 +78,22 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 		Date:      time.Now().In(h.cfg.OfficeTZ).Truncate(24 * time.Hour),
 	})
 
-	msg := tgbotapi.NewEditMessageTextAndMarkup(
+	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
 		tools.TextBookCalendar.String(),
 		tools.BuildCalendarKB(time.Now()),
 	)
 
-	msg.ParseMode = "MarkdownV2"
-	_, _ = h.bot.Send(msg)
+	edit.ParseMode = "MarkdownV2"
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("Failed to edit message on book list", "err", err)
+	}
+}
+
+func (h *Handler) handleBookCalendarNavigation(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	// TODO:
+	return
 }
 
 // Step 1.
@@ -118,13 +126,13 @@ func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQ
 		tools.TextBookAskTimeInput.String(),
 		tgbotapi.NewInlineKeyboardMarkup(
 			[]tgbotapi.InlineKeyboardButton{
-				tgbotapi.NewInlineKeyboardButtonData("⬅ Назад", "book:timepick_back"),
+				tools.BuildBackInlineKBButton("book:timepick_back"),
 			}),
 	)
 
 	edit.ParseMode = "MarkdownV2"
 	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on calendar back", "err", err)
+		h.log.Error("Failed to edit message on calendar", "err", err)
 	}
 }
 
@@ -155,13 +163,21 @@ func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message)
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		msg.Chat.ID,
 		msg.MessageID,
-		tools.TextBookAskDuration.String(),
-		tools.BuildDurationKB(),
+		tools.TextBookAskTimeInput.String(),
+		tools.BuildBlankInlineKB(),
 	)
 
 	edit.ParseMode = "MarkdownV2"
 	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on calendar back", "err", err)
+		h.log.Error("Failed to edit message on timepick", "err", err)
+	}
+
+	newMsg := tgbotapi.NewMessage(msg.Chat.ID, tools.TextBookAskDuration.String())
+	newMsg.ParseMode = "MarkdownV2"
+	newMsg.ReplyMarkup = tools.BuildDurationKB()
+
+	if _, err := h.bot.Send(newMsg); err != nil {
+		h.log.Error("Failed to send a new message on timepick", "err", err)
 	}
 }
 
@@ -169,13 +185,9 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 	h.answerCB(cq, "")
 
 	parts := strings.Split(cq.Data, ":")
-	durStr := parts[2] // формат даты предполагается как "YYYY-MM-DD"
-
-	session := h.sessions.Get(cq.From.ID)
-	if session == nil {
-		h.reply(cq.Message.Chat.ID, "Сессия не найдена")
-		return
-	}
+	durStr := parts[2]
+	// (0.5, 1.5, 2.5, 3.5)
+	// (1.0, 2.0, 3.0, 4.0)
 
 	durF, err := strconv.ParseFloat(durStr, 64)
 	if err != nil {
@@ -183,34 +195,76 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 		return
 	}
 
-	session.Duration = time.Duration(durF * float64(time.Hour))
-	session.EndTime = session.StartTime.Add(session.Duration)
-
-	h.askConfirmation(ctx, cq.Message.Chat.ID, cq.Message.MessageID, session)
-}
-
-func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	h.answerCB(cq, "")
-
-	parts := strings.Split(cq.Data, ":")
-	confirm, _ := strconv.ParseInt(parts[2], 10, 64) // 0 || 1
-
 	session := h.sessions.Get(cq.From.ID)
 	if session == nil {
 		h.reply(cq.Message.Chat.ID, "Сессия не найдена")
 		return
 	}
 
+	session.Duration = time.Duration(durF * float64(time.Hour))
+	session.EndTime = session.StartTime.Add(session.Duration)
+
+	text := fmt.Sprintf(
+		tools.TextBookAskConfirmation.String(),
+		session.RoomName,
+		session.Date.Format("02.01.2006"),
+		session.StartTime.Format("15:04"),
+		session.Duration,
+	)
+
+	edit := tgbotapi.NewEditMessageTextAndMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		text,
+		tools.BuildConfirmationKB(),
+	)
+
+	edit.ParseMode = "MarkdownV2"
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("Failed to edit message on duration", "err", err)
+	}
+}
+
+func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	defer h.sessions.Delete(cq.From.ID)
+
+	h.answerCB(cq, "")
+
+	parts := strings.Split(cq.Data, ":")
+	confirm, _ := strconv.ParseInt(parts[2], 10, 64) // 0 || 1
+
+	session := h.sessions.Get(cq.From.ID)
+
+	sess := usecase.CreateBookingCmd{
+		RoomID: session.RoomID,
+		UserID: domain.UserID(session.UserID),
+		Start:  session.StartTime,
+		End:    session.EndTime,
+		Note:   "none",
+	}
+
+	text := ""
+
 	if confirm == 1 {
-		err := h.uc.CreateBooking(ctx, *session)
+		err := h.uc.CreateBooking(ctx, sess)
 		if err != nil {
 			h.reply(cq.Message.Chat.ID, "Ошибка при создании брони: "+err.Error())
 			return
 		}
-		h.reply(cq.Message.Chat.ID, "✅ Бронь успешно создана!")
+		text = "✅ Бронь успешно создана!"
 	} else {
-		h.reply(cq.Message.Chat.ID, "❌ Бронь отменена.")
+		text = "❌ Бронь отменена."
 	}
 
-	h.sessions.Delete(cq.From.ID)
+	edit := tgbotapi.NewEditMessageTextAndMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		text,
+		tools.BuildBlankInlineKB(),
+	)
+
+	edit.ParseMode = "MarkdownV2"
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("Failed to edit message on confirmation", "err", err)
+	}
 }

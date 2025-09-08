@@ -82,6 +82,7 @@ func (h *Handler) registerRoutes() {
 	// h.commandHandlers["my"] = h.handleMyCallback
 	h.callbackHandlers["book:list"] = h.handleBookList
 	h.callbackHandlers["book:calendar"] = h.handleBookCalendar
+	h.callbackHandlers["book:calendar_nav"] = h.handleBookCalendarNavigation // book:calendar_nav:-1
 	h.callbackHandlers["book:duration"] = h.handleBookDuration
 	h.callbackHandlers["book:confirm"] = h.handleBookConfirm
 
