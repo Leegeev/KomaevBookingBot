@@ -1,6 +1,11 @@
 package tools
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/docker/docker/api/server/router/session"
+)
 
 const TextBackInlineKBButton = "🔙 Назад"
 
@@ -60,6 +65,16 @@ const (
 	TextBookYes SafeText = "✅ Бронь успешно создана!"
 	TextBookNo  SafeText = "❌ Бронь отменена."
 )
+
+func BuildConfirmationStr(sess *BookingSession) string {
+	return fmt.Sprintf(
+		TextBookAskConfirmation.String(),
+		session.RoomName,
+		session.Date.Format("02.01.2006"),
+		session.StartTime.Format("15:04"),
+		session.Duration,
+	)
+}
 
 type SafeText string
 

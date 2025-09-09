@@ -33,7 +33,7 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 // Step 1.
 // Хендлер кнопки назад в календаре
 func (h *Handler) handleBookCalendarBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	h.answerCB(cq, "") // Убираем часики и не показываем уведомление
+	h.answerCB(cq, "")
 	h.log.Info("User clicked 'Назад' on calendar", "user_id", cq.From.ID)
 
 	rooms, err := h.uc.ListRooms(ctx)
@@ -62,15 +62,53 @@ func (h *Handler) handleBookCalendarBack(ctx context.Context, cq *tgbotapi.Callb
 }
 
 func (h *Handler) handleBookTimepickBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	return
+	h.answerCB(cq, "")
+	h.log.Info("User clicked 'Назад' on timepick", "user_id", cq.From.ID)
+
+	edit := tgbotapi.NewEditMessageTextAndMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		tools.TextBookCalendar.String(),
+		tools.BuildCalendarKB(0),
+	)
+	edit.ParseMode = "MarkdownV2"
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("Failed to edit message on BookTimepickBack", "err", err)
+	}
 }
 
 func (h *Handler) handleBookDurationBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
-	h.askTimeInput(ctx, cq.Message.Chat.ID, cq.Message.MessageID)
+	h.log.Info("User clicked 'Назад' on duration", "user_id", cq.From.ID)
+
+	edit := tgbotapi.NewEditMessageTextAndMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		tools.TextBookAskTimeInput.String(),
+		tgbotapi.NewInlineKeyboardMarkup(
+			[]tgbotapi.InlineKeyboardButton{
+				tools.BuildBackInlineKBButton("book:timepick_back"),
+			}),
+	)
+
+	edit.ParseMode = "MarkdownV2"
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("Failed to edit message on BookDurationBack", "err", err)
+	}
 }
 
 func (h *Handler) handleBookConfirmBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
-	h.askDuration(ctx, cq.Message.Chat.ID, cq.Message.MessageID)
+	h.log.Info("User clicked 'Назад' on confirmation", "user_id", cq.From.ID)
+
+	edit := tgbotapi.NewEditMessageTextAndMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		tools.TextBookAskDuration.String(),
+		tools.BuildDurationKB(),
+	)
+	edit.ParseMode = "MarkdownV2"
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("Failed to edit message on BookConfirmBack", "err", err)
+	}
 }

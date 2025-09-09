@@ -41,7 +41,11 @@ func BuildRoomListKB(ctx context.Context, rooms []domain.Room) [][]tgbotapi.Inli
 
 // Step 1.
 // Строит календарь. Вызывается из хендлера.
-func buildCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
+func BuildCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
+	if shift < 0 {
+		shift = 0
+	}
+
 	// Строка 1 — навигация
 	row1 := tgbotapi.NewInlineKeyboardRow(
 		tgbotapi.NewInlineKeyboardButtonData("⏪", fmt.Sprintf("book:calendar_nav:%d", shift-1)),
@@ -50,10 +54,6 @@ func buildCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
 	// Строка 2 — дни недели; Строка 3 — конкретные даты
 	row2 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
 	row3 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
-
-	if shift < 0 {
-		shift = 0
-	}
 
 	now := time.Now()
 	daysOfWeek := []string{"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"}

@@ -91,6 +91,8 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 	}
 }
 
+// Step 0.+-1
+// Хендлер Навигации по календарю
 func (h *Handler) handleBookCalendarNavigation(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.log.Info("calendar nav callback", "data", cq.Data, "user", cq.From.UserName)
 
@@ -222,18 +224,10 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 	session.Duration = time.Duration(durF * float64(time.Hour))
 	session.EndTime = session.StartTime.Add(session.Duration)
 
-	text := fmt.Sprintf(
-		tools.TextBookAskConfirmation.String(),
-		session.RoomName,
-		session.Date.Format("02.01.2006"),
-		session.StartTime.Format("15:04"),
-		session.Duration,
-	)
-
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		text,
+		tools.BuildConfirmationStr(session),
 		tools.BuildConfirmationKB(),
 	)
 
@@ -277,12 +271,19 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		text,
+		tools.BuildConfirmationStr(session),
 		tools.BuildBlankInlineKB(),
 	)
 
 	edit.ParseMode = "MarkdownV2"
 	if _, err := h.bot.Send(edit); err != nil {
 		h.log.Error("Failed to edit message on confirmation", "err", err)
+	}
+	newMsg := tgbotapi.NewMessage(cq.Message.Chat.ID, text)
+	newMsg.ParseMode = "MarkdownV2"
+	// newMsg.ReplyMarkup = tools.BuildDurationKB()
+
+	if _, err := h.bot.Send(newMsg); err != nil {
+		h.log.Error("Failed to send a new message on confirmation", "err", err)
 	}
 }
