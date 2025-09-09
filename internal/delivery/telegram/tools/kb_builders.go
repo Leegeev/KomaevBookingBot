@@ -21,7 +21,7 @@ func BuildBackInlineKBButton(data string) tgbotapi.InlineKeyboardButton {
 
 // Step 0.
 // /book Строит инлайн клавиатуру с переговорками
-func BuildRoomListKB(ctx context.Context, rooms []domain.Room) [][]tgbotapi.InlineKeyboardButton {
+func BuildRoomListKB(rooms []domain.Room) [][]tgbotapi.InlineKeyboardButton {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, len(rooms))
 	for _, room := range rooms {
 		if !room.IsActive {
@@ -145,4 +145,24 @@ func formatDurationButtonText(d float64) string {
 		return fmt.Sprintf("%.0f", d)
 	}
 	return fmt.Sprintf("%.1f", d)
+}
+
+func BuildMyListKB(bks []domain.Booking) tgbotapi.InlineKeyboardMarkup {
+	rows := make([][]tgbotapi.InlineKeyboardButton, 0, len(bks))
+	for _, bk := range bks {
+		start := bk.Range.Start.In(h.cfg.OfficeTZ)
+		end := bk.Range.End.In(h.cfg.OfficeTZ)
+		room, _ := h.uc.GetRoom(int64(bk.RoomID))
+
+		btnText := fmt.Sprintf("#%s — %s %02d:%02d–%02d:%02d",
+			room.Name, start.Format("01-02"),
+			start.Hour(), start.Minute(), end.Hour(), end.Minute())
+
+		data := fmt.Sprintf("my:list:%d", bk.ID)
+
+		btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
+	}
+
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("my:back")))
 }

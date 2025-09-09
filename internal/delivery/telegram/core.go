@@ -134,7 +134,7 @@ func (h *Handler) registerRoutes() {
 	h.commandHandlers["deactivate_room"] = h.handleDeactivateRoom
 
 	// callbacks
-	// h.commandHandlers["my"] = h.handleMyCallback
+	// BOOK
 	h.callbackHandlers["book:list"] = h.handleBookList
 	h.callbackHandlers["book:calendar"] = h.handleBookCalendar
 	h.callbackHandlers["book:calendar_nav"] = h.handleBookCalendarNavigation // book:calendar_nav:-1
@@ -146,6 +146,10 @@ func (h *Handler) registerRoutes() {
 	h.callbackHandlers["book:timepick_back"] = h.handleBookTimepickBack
 	h.callbackHandlers["book:duration_back"] = h.handleBookDurationBack
 	h.callbackHandlers["book:confirm_back"] = h.handleBookConfirmBack
+
+	// MY
+	h.callbackHandlers["my:list"] = h.handleMyCallback
+	h.callbackHandlers["my:back"] = h.handleMyListBack
 
 	// h.commandHandlers["create_room"] = h.handleCreateRoomCallback
 	// h.commandHandlers["deactivate_room"] = h.handleDeactivateRoomCallback
