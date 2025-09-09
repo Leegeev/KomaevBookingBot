@@ -61,6 +61,12 @@ const (
 	TextBookNo  SafeText = "❌ Бронь отменена."
 )
 
+type SafeText string
+
+func (t SafeText) String() string {
+	return EscapeMarkdownV2(string(t))
+}
+
 // EscapeMarkdownV2 безопасно экранирует текст для Telegram MarkdownV2
 func EscapeMarkdownV2(text string) string {
 	var b strings.Builder
@@ -81,10 +87,4 @@ func EscapeMarkdownV2(text string) string {
 	}
 
 	return b.String()
-}
-
-type SafeText string
-
-func (t SafeText) String() string {
-	return EscapeMarkdownV2(string(t))
 }

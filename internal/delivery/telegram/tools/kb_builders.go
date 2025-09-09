@@ -41,30 +41,47 @@ func BuildRoomListKB(ctx context.Context, rooms []domain.Room) [][]tgbotapi.Inli
 
 // Step 1.
 // Строит календарь. Вызывается из хендлера.
-func BuildCalendarKB(start time.Time) tgbotapi.InlineKeyboardMarkup {
+func buildCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
 	// Строка 1 — навигация
 	row1 := tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("⏪", "book:calendar_nav:-1"),
-		tgbotapi.NewInlineKeyboardButtonData("⏩", "book:calendar_nav:+1"),
+		tgbotapi.NewInlineKeyboardButtonData("⏪", fmt.Sprintf("book:calendar_nav:%d", shift-1)),
+		tgbotapi.NewInlineKeyboardButtonData("⏩", fmt.Sprintf("book:calendar_nav:%d", shift+1)),
 	)
-
-	// Строка 2 — дни недели
+	// Строка 2 — дни недели; Строка 3 — конкретные даты
 	row2 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
-	// Строка 3 — конкретные даты
 	row3 := make([]tgbotapi.InlineKeyboardButton, 0, 7)
 
+	if shift < 0 {
+		shift = 0
+	}
+
+	now := time.Now()
 	daysOfWeek := []string{"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"}
-	today := time.Now()
-	todayW := int(today.Weekday())
+	todayW := int(now.Weekday())                   // используется для создания календаря на ТЕКУЩЕЙ неделе
+	shiftedDate := now.AddDate(0, 0, 7*int(shift)) // используется для отсчета дат
 
+	if todayW == 0 { // То воскресенье меняем на удобный формат для daysOfWeek
+		todayW = 6
+	} else {
+		todayW -= 1 // Если сегодня не воскресенье, то -1 чтобы даты совпадали
+	}
+
+	if shift != 0 {
+		shiftedDate = shiftedDate.AddDate(0, 0, -todayW)
+		todayW = -1 // Если shift != 0, значит мы строим график другой недели и там все даты доступны
+	}
+
+	var row3display, callback string
 	for i := 0; i < 7; i++ {
-		dayIndex := (todayW + i) % 7
-		day := today.AddDate(0, 0, i)
-
-		row2display := daysOfWeek[dayIndex]
-		row3display := day.Format("02.01")
-		callback := fmt.Sprintf("book:calendar:%s", day.Format("2006-01-02"))
-
+		row2display := daysOfWeek[i]
+		date := shiftedDate.AddDate(0, 0, i)
+		if todayW > i {
+			row3display = "❌"
+			callback = ""
+		} else {
+			row3display = date.Format("02.01")
+			callback = fmt.Sprintf("book:calendar:%s", date.Format("2006-01-02"))
+		}
 		row2 = append(row2, tgbotapi.NewInlineKeyboardButtonData(row2display, callback))
 		row3 = append(row3, tgbotapi.NewInlineKeyboardButtonData(row3display, callback))
 	}

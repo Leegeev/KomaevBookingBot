@@ -82,7 +82,7 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
 		tools.TextBookCalendar.String(),
-		tools.BuildCalendarKB(time.Now()),
+		tools.BuildCalendarKB(0),
 	)
 
 	edit.ParseMode = "MarkdownV2"
@@ -92,8 +92,22 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 }
 
 func (h *Handler) handleBookCalendarNavigation(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	// TODO:
-	return
+	h.log.Info("calendar nav callback", "data", cq.Data, "user", cq.From.UserName)
+
+	// 1. Парсим направление навигации
+	parts := strings.Split(cq.Data, ":")
+	shift, _ := strconv.ParseInt(parts[2], 10, 64) // -3 -2 -1 1 2 3
+
+	// 2. Обновляем только клавиатуру
+	editMarkup := tgbotapi.NewEditMessageReplyMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		tools.BuildCalendarKB(shift),
+	)
+
+	if _, err := h.bot.Request(editMarkup); err != nil {
+		h.log.Error("failed to edit calendar inline keyboard", "err", err)
+	}
 }
 
 // Step 1.
