@@ -68,34 +68,6 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 	}
 }
 
-func (h *Handler) registerRoutes() {
-	// commands
-	h.commandHandlers["start"] = h.handleStart
-	h.commandHandlers["help"] = h.handleHelp
-	h.commandHandlers["my"] = h.handleMy
-	h.commandHandlers["book"] = h.handleBook
-	h.commandHandlers["schedule"] = h.handleSchedule
-	h.commandHandlers["create_room"] = h.handleCreateRoom
-	h.commandHandlers["deactivate_room"] = h.handleDeactivateRoom
-
-	// callbacks
-	// h.commandHandlers["my"] = h.handleMyCallback
-	h.callbackHandlers["book:list"] = h.handleBookList
-	h.callbackHandlers["book:calendar"] = h.handleBookCalendar
-	h.callbackHandlers["book:calendar_nav"] = h.handleBookCalendarNavigation // book:calendar_nav:-1
-	h.callbackHandlers["book:duration"] = h.handleBookDuration
-	h.callbackHandlers["book:confirm"] = h.handleBookConfirm
-
-	h.callbackHandlers["book:list_back"] = h.handleBookListBack
-	h.callbackHandlers["book:calendar_back"] = h.handleBookCalendarBack
-	h.callbackHandlers["book:timepick_back"] = h.handleBookTimepickBack
-	h.callbackHandlers["book:duration_back"] = h.handleBookDurationBack
-	h.callbackHandlers["book:confirm_back"] = h.handleBookConfirmBack
-
-	// h.commandHandlers["create_room"] = h.handleCreateRoomCallback
-	// h.commandHandlers["deactivate_room"] = h.handleDeactivateRoomCallback
-}
-
 func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -123,9 +95,11 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	}
 
 	if upd.Message != nil {
-		//check if it is time input
-		// else
-		return
+		if ses := h.sessions.Get(upd.Message.From.ID); ses != nil && ses.BookState == tools.BookStateChoosingStartTime {
+			h.handleBookTimepick(ctx, upd.Message)
+			return
+		}
+		h.reply(upd.Message.Chat.ID, "Необработанный ввод. Смотри /help")
 	}
 }
 
@@ -143,4 +117,32 @@ func (h *Handler) reply(chatID int64, text string) {
 	m := tgbotapi.NewMessage(chatID, text)
 	m.ParseMode = "Markdown"
 	_, _ = h.bot.Send(m)
+}
+
+func (h *Handler) registerRoutes() {
+	// commands
+	h.commandHandlers["start"] = h.handleStart
+	h.commandHandlers["help"] = h.handleHelp
+	h.commandHandlers["my"] = h.handleMy
+	h.commandHandlers["book"] = h.handleBook
+	h.commandHandlers["schedule"] = h.handleSchedule
+	h.commandHandlers["create_room"] = h.handleCreateRoom
+	h.commandHandlers["deactivate_room"] = h.handleDeactivateRoom
+
+	// callbacks
+	// h.commandHandlers["my"] = h.handleMyCallback
+	h.callbackHandlers["book:list"] = h.handleBookList
+	h.callbackHandlers["book:calendar"] = h.handleBookCalendar
+	h.callbackHandlers["book:calendar_nav"] = h.handleBookCalendarNavigation // book:calendar_nav:-1
+	h.callbackHandlers["book:duration"] = h.handleBookDuration
+	h.callbackHandlers["book:confirm"] = h.handleBookConfirm
+
+	h.callbackHandlers["book:list_back"] = h.handleBookListBack
+	h.callbackHandlers["book:calendar_back"] = h.handleBookCalendarBack
+	h.callbackHandlers["book:timepick_back"] = h.handleBookTimepickBack
+	h.callbackHandlers["book:duration_back"] = h.handleBookDurationBack
+	h.callbackHandlers["book:confirm_back"] = h.handleBookConfirmBack
+
+	// h.commandHandlers["create_room"] = h.handleCreateRoomCallback
+	// h.commandHandlers["deactivate_room"] = h.handleDeactivateRoomCallback
 }

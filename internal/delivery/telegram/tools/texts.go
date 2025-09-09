@@ -3,8 +3,6 @@ package tools
 import (
 	"fmt"
 	"strings"
-
-	"github.com/docker/docker/api/server/router/session"
 )
 
 const TextBackInlineKBButton = "🔙 Назад"
@@ -69,10 +67,10 @@ const (
 func BuildConfirmationStr(sess *BookingSession) string {
 	return fmt.Sprintf(
 		TextBookAskConfirmation.String(),
-		session.RoomName,
-		session.Date.Format("02.01.2006"),
-		session.StartTime.Format("15:04"),
-		session.Duration,
+		sess.RoomName,
+		sess.Date.Format("02.01.2006"),
+		sess.StartTime.Format("15:04"),
+		sess.Duration,
 	)
 }
 

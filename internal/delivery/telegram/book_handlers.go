@@ -69,7 +69,7 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 
 	// Создаем bookingSession и сохраняем в in-memory storage
 	h.sessions.Set(&tools.BookingSession{
-		BookState: 1,
+		BookState: tools.BookStateChoosingDate,
 		ChatID:    cq.Message.Chat.ID,
 		UserID:    cq.From.ID,
 		MessageID: cq.Message.MessageID,
@@ -135,6 +135,7 @@ func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQ
 	}
 
 	session.Date = date // LOCAL TIMEZONE
+	session.BookState = tools.BookStateChoosingStartTime
 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
@@ -172,6 +173,7 @@ func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message)
 	}
 
 	session := h.sessions.Get(msg.From.ID)
+	session.BookState = tools.BookStateChoosingDuration
 
 	if session == nil {
 		h.reply(msg.Chat.ID, "Сессия не найдена")
@@ -223,6 +225,7 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 
 	session.Duration = time.Duration(durF * float64(time.Hour))
 	session.EndTime = session.StartTime.Add(session.Duration)
+	session.BookState = tools.BookStateConfirmingBooking
 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
