@@ -173,6 +173,10 @@ func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message)
 	}
 
 	session := h.sessions.Get(msg.From.ID)
+	if session == nil {
+		h.reply(msg.From.ID, "Сессия не найдена")
+		return
+	}
 	session.BookState = tools.BookStateChoosingDuration
 
 	if session == nil {

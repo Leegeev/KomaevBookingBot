@@ -123,7 +123,21 @@ func BuildDurationKB() tgbotapi.InlineKeyboardMarkup {
 }
 
 func BuildConfirmationKB() tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup()
+	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 2)
+	// Кнопка с
+	yesBtn := tgbotapi.NewInlineKeyboardButtonData(
+		"✅Верно",
+		fmt.Sprintf("book:confirm:%d", 1),
+	)
+	noBtn := tgbotapi.NewInlineKeyboardButtonData(
+		"❌Отмена",
+		fmt.Sprintf("book:confirm:%d", 0),
+	)
+	row := tgbotapi.NewInlineKeyboardRow(yesBtn, noBtn)
+
+	rows = append(rows, row)
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("book:confirm_back")))
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
 func formatDurationButtonText(d float64) string {
