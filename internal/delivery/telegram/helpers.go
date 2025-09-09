@@ -25,9 +25,6 @@ import (
 type UserID = int64
 type BookingID = int64
 
-const AdminID int64 = 123456789 // TODO: заменить на реальный ID администратора
-
-// Roles in a chat
 const (
 	Creator       = "creator"
 	Administrator = "administrator"
@@ -60,6 +57,38 @@ func (h *Handler) getRole(ctx context.Context, userID int64) (string, error) {
 
 	return m.Status, nil
 }
+
+func (h *Handler) checkRoleIsAdmin(role string) bool {
+	return role == Administrator || role == Creator
+}
+
+func (h *Handler) checkRoleIsSupported(role string) bool {
+	return role == Creator || role == Administrator || role == Member
+}
+
+func (h *Handler) checkSupported(ctx context.Context, upd tgbotapi.Update) error {
+	if upd.Message != nil {
+		role, _ := h.getRole(ctx, upd.Message.From.ID)
+		supported := h.checkRoleIsSupported(role)
+		if !supported {
+			return fmt.Errorf("user is not supported")
+		}
+		return nil
+	}
+
+	if upd.CallbackQuery != nil {
+		role, _ := h.getRole(ctx, upd.CallbackQuery.From.ID)
+		supported := h.checkRoleIsSupported(role)
+		if !supported {
+			return fmt.Errorf("user is not supported")
+		}
+		return nil
+	}
+	h.log.Error("необработанный update", "upd", upd)
+	return fmt.Errorf("неизвестный тип update, обратитесь в поддержку")
+}
+
+const AdminID int64 = 123456789 // TODO: заменить на реальный ID администратора
 
 func (h *Handler) notifyAdmin(msg string) {
 	escaped := tools.EscapeMarkdownV2(msg)

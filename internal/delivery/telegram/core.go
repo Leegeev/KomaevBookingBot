@@ -75,6 +75,10 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 		}
 	}()
 
+	if err := h.checkSupported(ctx, upd); err != nil {
+		h.reply(upd.FromChat().ChatConfig().ChatID, err.Error())
+	}
+
 	if upd.Message.IsCommand() {
 		cmd := upd.Message.Command()
 		if handler, ok := h.commandHandlers[cmd]; ok {
