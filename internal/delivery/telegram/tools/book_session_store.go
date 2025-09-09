@@ -43,11 +43,12 @@ func (s *SessionsStore) Get(userID int64) *BookingSession {
 	if s, ok := s.data[userID]; ok {
 		return s
 	}
-	newSession := &BookingSession{
-		UserID: userID,
-	}
-	s.data[userID] = newSession
-	return newSession
+	// newSession := &BookingSession{
+	// 	UserID: userID,
+	// }
+	// s.data[userID] = newSession
+	// return newSession
+	return nil
 }
 
 func (s *SessionsStore) Set(session *BookingSession) {
