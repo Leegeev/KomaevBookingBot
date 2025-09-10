@@ -11,7 +11,8 @@ CREATE TABLE bookings (
   id          BIGSERIAL PRIMARY KEY,
   room_id     INT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
   room_name TEXT NOT NULL,  -- денормализуем для истории
-  created_by  BIGINT NOT NULL,
+  user_id  BIGINT NOT NULL,
+  user_name TEXT NOT NULL,
   time_range  TSTZRANGE NOT NULL,  -- [start, end)
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
 );

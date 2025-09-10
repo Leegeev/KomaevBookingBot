@@ -4,15 +4,16 @@ import "time"
 
 func (r Room) Valid() bool { return r.ID != 0 && r.Name != "" }
 
-func NewBooking(roomID RoomID, roomName string, createdBy UserID, tr TimeRange) (Booking, error) {
+func NewBooking(roomID RoomID, roomName string, createdBy UserID, UserName string, tr TimeRange) (Booking, error) {
 	if roomID == 0 || createdBy == 0 {
 		return Booking{}, ErrInvalidInputData
 	}
 	return Booking{
-		RoomID:    roomID,
-		RoomName:  roomName,
-		CreatedBy: createdBy,
-		Range:     tr,
+		RoomID:   roomID,
+		RoomName: roomName,
+		UserID:   createdBy,
+		UserName: UserName,
+		Range:    tr,
 	}, nil
 }
 

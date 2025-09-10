@@ -21,7 +21,8 @@ type bookingRow struct {
 	ID        int64     `db:"id"`
 	RoomID    int64     `db:"room_id"`
 	RoomName  string    `db:"room_name"`
-	CreatedBy int64     `db:"created_by"`
+	UserID    int64     `db:"user_id"`
+	UserName  string    `db:"user_name"`
 	StartUTC  time.Time `db:"start_utc"`
 	EndUTC    time.Time `db:"end_utc"`
 	CreatedAt time.Time `db:"created_at"`
@@ -46,10 +47,10 @@ func (r *bookingRepositoryPG) Create(ctx context.Context, b domain.Booking) erro
 		ctx,
 		qInsertBooking,
 		b.RoomID,
-		b.CreatedBy,
+		b.UserID,
+		b.UserName,
 		start,
 		end,
-		b.Note,
 	).Scan(&newID, &createdAt)
 	if err != nil {
 		return mapPgOverlapErr(err)
@@ -137,11 +138,12 @@ func bookingRowToDomain(br bookingRow) (domain.Booking, error) {
 	}
 
 	return domain.Booking{
-		ID:        domain.BookingID(br.ID),
-		RoomID:    domain.RoomID(br.RoomID),
-		RoomName:  br.RoomName,
-		CreatedBy: domain.UserID(br.CreatedBy),
-		Range:     tr,
+		ID:       domain.BookingID(br.ID),
+		RoomID:   domain.RoomID(br.RoomID),
+		RoomName: br.RoomName,
+		UserID:   domain.UserID(br.UserID),
+		UserName: br.UserName,
+		Range:    tr,
 		// CreatedAt: br.CreatedAt.UTC(),
 	}, nil
 }

@@ -26,6 +26,7 @@ type CreateBookingCmd struct {
 	RoomID   domain.RoomID
 	RoomName string
 	UserID   domain.UserID
+	UserName string
 	Start    time.Time // UTC
 	End      time.Time // UTC
 }
@@ -55,7 +56,7 @@ func (s *BookingService) CreateBooking(ctx context.Context, cmd CreateBookingCmd
 	}
 
 	// Create booking entity
-	booking, err := domain.NewBooking(cmd.RoomID, cmd.RoomName, cmd.UserID, tr)
+	booking, err := domain.NewBooking(cmd.RoomID, cmd.RoomName, cmd.UserID, cmd.UserName, tr)
 	if err != nil {
 		s.logger.Error("Failed to create booking entity", "error", err)
 		return err
@@ -102,7 +103,7 @@ func (s *BookingService) CheckBookingAndUserID(ctx context.Context, bookingID, u
 		s.logger.Error("Failed to get booking", "error", err)
 		return false, err
 	}
-	if booking.CreatedBy != domain.UserID(userID) {
+	if booking.UserID != domain.UserID(userID) {
 		s.logger.Warn("User does not own this booking", "userID", userID, "bookingID", bookingID)
 		return false, domain.ErrNotOwner
 	}

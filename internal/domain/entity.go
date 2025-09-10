@@ -23,10 +23,11 @@ type TimeRange struct {
 
 // Сущность бронирования комнаты.
 type Booking struct {
-	ID        BookingID
-	RoomID    RoomID
-	RoomName  string // денормализуем для истории
-	CreatedBy UserID
-	Range     TimeRange // [start, end) UTC
-	Note      string
+	ID       BookingID
+	RoomID   RoomID
+	RoomName string // денормализуем для истории
+	UserID   UserID
+	UserName string
+	Range    TimeRange // [start, end) UTC
+	Note     string
 }

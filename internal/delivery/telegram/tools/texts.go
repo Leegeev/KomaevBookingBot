@@ -90,6 +90,30 @@ const (
 	TextMyBookingCancelErr SafeText = "❌ Не удалось отменить бронь. Тех. поддержка уже уведомлена."
 )
 
+// тексты /schedule
+const (
+	TextScheduleIntroduction SafeText = "*Расписание на неделю:*"
+	TextScheduleBooking      SafeText = `- %s %s:%s %s`
+	// - мм.дд 16:30-17:30 @leegeev
+
+)
+
+func BuildBookingStr(bks []domain.Booking) string {
+	var b strings.Builder
+	for i, bk := range bks {
+		if i == 0 {
+			b.WriteString(fmt.Sprintf("*%s*\n", bk.RoomName))
+		}
+		b.WriteString(fmt.Sprintf(TextScheduleBooking.String()+"\n",
+			bk.Range.Start.Format("02.01"),
+			bk.Range.Start.Format("15"),
+			bk.Range.Start.Format("04"),
+			bk.UserName,
+		))
+	}
+	return b.String()
+}
+
 func BuildConfirmationStr(sess *BookingSession) string {
 	return fmt.Sprintf(
 		TextBookAskConfirmation.String(),
