@@ -165,3 +165,16 @@ func BuildMyListKB(bks []domain.Booking, OfficeTZ *time.Location) tgbotapi.Inlin
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("my:back")))
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
+
+func BuildMyOperationsKB(bookingID int64) tgbotapi.InlineKeyboardMarkup {
+	// rescheduleBtn := tgbotapi.NewInlineKeyboardButtonData("🔄 Перенести", fmt.Sprintf("my:reschedule:%d", bookingID))
+	cancelBtn := tgbotapi.NewInlineKeyboardButtonData("❌ Отменить", fmt.Sprintf("my:cancel:%d", bookingID))
+
+	backBtn := BuildBackInlineKBButton("my:list_back")
+
+	// row1 := tgbotapi.NewInlineKeyboardRow(rescheduleBtn, cancelBtn)
+	row1 := tgbotapi.NewInlineKeyboardRow(cancelBtn)
+	row2 := tgbotapi.NewInlineKeyboardRow(backBtn)
+
+	return tgbotapi.NewInlineKeyboardMarkup(row1, row2)
+}

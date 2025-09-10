@@ -57,6 +57,7 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 // Строит календарь
 func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
+	h.log.Info("handling picked room in room list", "data", cq.Data, "user", cq.From.UserName)
 
 	parts := strings.Split(cq.Data, ":")
 	id, _ := strconv.ParseInt(parts[2], 10, 64)

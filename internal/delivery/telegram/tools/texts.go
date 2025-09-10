@@ -3,6 +3,8 @@ package tools
 import (
 	"fmt"
 	"strings"
+
+	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
 
 const TextBackInlineKBButton = "🔙 Назад"
@@ -64,6 +66,20 @@ const (
 	TextBookNo  SafeText = "❌ Бронь отменена."
 )
 
+// ОСТАНОВИЛСЯ ЗДЕСЬ
+// ДЕЛАЮ handleMyList
+// тексты для мои брони
+const (
+	TextMyIntroduction SafeText = "*Ваши брони:*"
+	TextMyOperations   SafeText = `Переговорка: %s
+Дата: %s
+Начало: %s
+Продолжительность: %s`
+
+	TextMyBookingCancelled SafeText = "✅ Ваша бронь успешно отменена."
+	TextMyBookingCancelErr SafeText = "❌ Не удалось отменить бронь. Тех. поддержка уже уведомлена."
+)
+
 func BuildConfirmationStr(sess *BookingSession) string {
 	return fmt.Sprintf(
 		TextBookAskConfirmation.String(),
@@ -71,6 +87,16 @@ func BuildConfirmationStr(sess *BookingSession) string {
 		sess.Date.Format("02.01.2006"),
 		sess.StartTime.Format("15:04"),
 		sess.Duration,
+	)
+}
+
+func BuildMyOperationStr(bk domain.Booking) string {
+	return fmt.Sprintf(
+		TextMyOperations.String(),
+		bk.RoomName,
+		bk.Range.Start.Format("02.01.2006"),
+		bk.Range.Start.Format("15:04"),
+		bk.Range.End.Sub(bk.Range.Start).String(),
 	)
 }
 

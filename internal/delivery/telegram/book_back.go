@@ -12,6 +12,8 @@ import (
 
 // Step 0.
 // Хендлер кнопки назад
+// TODO: вернуться к стартовому экрану (например, список действий)
+// h.reply(cq.Message.Chat.ID, "Вы вернулись в главное меню.")
 func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
 	h.log.Info("User clicked 'Назад' на списке комнат", "user_id", cq.From.ID)
@@ -26,8 +28,6 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 	msg.ParseMode = "MarkdownV2"
 	_, _ = h.bot.Send(msg)
 
-	// TODO: вернуться к стартовому экрану (например, список действий)
-	// h.reply(cq.Message.Chat.ID, "Вы вернулись в главное меню.")
 }
 
 // Step 1.

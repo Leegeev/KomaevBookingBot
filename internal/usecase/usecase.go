@@ -85,6 +85,16 @@ func (s *BookingService) CancelBooking(ctx context.Context, bookingID int64) err
 	return nil
 }
 
+func (s *BookingService) GetById(ctx context.Context, bookingID int64) (domain.Booking, error) {
+	s.logger.Info("Getting booking by ID", "bookingID", bookingID)
+	booking, err := s.bookingRepo.GetByID(ctx, domain.BookingID(bookingID))
+	if err != nil {
+		s.logger.Error("Failed to get booking", "error", err)
+		return domain.Booking{}, err
+	}
+	return booking, nil
+}
+
 func (s *BookingService) CheckBookingAndUserID(ctx context.Context, bookingID, userID int64) (bool, error) {
 	s.logger.Info("Checking if it is his booking")
 	booking, err := s.bookingRepo.GetByID(ctx, domain.BookingID(bookingID))
