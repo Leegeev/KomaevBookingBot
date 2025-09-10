@@ -41,7 +41,7 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	rows := tools.BuildRoomListKB(ctx, rooms)
+	rows := tools.BuildRoomListKB(rooms)
 
 	m := tgbotapi.NewMessage(msg.Chat.ID, tools.TextBookIntroduction.String())
 	m.ParseMode = "MarkdownV2"
@@ -255,11 +255,11 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 	session := h.sessions.Get(cq.From.ID)
 
 	sess := usecase.CreateBookingCmd{
-		RoomID: session.RoomID,
-		UserID: domain.UserID(session.UserID),
-		Start:  session.StartTime,
-		End:    session.EndTime,
-		Note:   "none",
+		RoomID:   session.RoomID,
+		RoomName: session.RoomName,
+		UserID:   domain.UserID(session.UserID),
+		Start:    session.StartTime,
+		End:      session.EndTime,
 	}
 
 	text := ""

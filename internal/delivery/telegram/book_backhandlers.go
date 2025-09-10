@@ -47,7 +47,7 @@ func (h *Handler) handleBookCalendarBack(ctx context.Context, cq *tgbotapi.Callb
 		return
 	}
 
-	rows := tools.BuildRoomListKB(ctx, rooms)
+	rows := tools.BuildRoomListKB(rooms)
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
