@@ -32,10 +32,10 @@ const qSelectByID = `
 SELECT
   id,
   room_id,
+  room_name,
   created_by,
   lower(time_range) AS start_utc,
   upper(time_range) AS end_utc,
-  note,
   created_at
 FROM bookings
 WHERE id = $1;
@@ -45,10 +45,10 @@ const qListByRoomAndInterval = `
 SELECT
   id,
   room_id,
+  room_name,
   created_by,
   lower(time_range) AS start_utc,
   upper(time_range) AS end_utc,
-  note,
   created_at
 FROM bookings
 WHERE room_id = $1
@@ -61,10 +61,10 @@ const qListByUser = `
 SELECT
   id,
   room_id,
+  room_name,
   created_by,
   lower(time_range) AS start_utc,
   upper(time_range) AS end_utc,
-  note,
   created_at
 FROM bookings
 WHERE created_by = $1

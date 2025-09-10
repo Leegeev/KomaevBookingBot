@@ -23,11 +23,11 @@ type BookingService struct {
 }
 
 type CreateBookingCmd struct {
-	RoomID domain.RoomID
-	UserID domain.UserID
-	Start  time.Time // UTC
-	End    time.Time // UTC
-	Note   string
+	RoomID   domain.RoomID
+	RoomName string
+	UserID   domain.UserID
+	Start    time.Time // UTC
+	End      time.Time // UTC
 }
 
 func (s *BookingService) CreateBooking(ctx context.Context, cmd CreateBookingCmd) error {
@@ -55,7 +55,7 @@ func (s *BookingService) CreateBooking(ctx context.Context, cmd CreateBookingCmd
 	}
 
 	// Create booking entity
-	booking, err := domain.NewBooking(cmd.RoomID, cmd.UserID, tr, cmd.Note)
+	booking, err := domain.NewBooking(cmd.RoomID, cmd.RoomName, cmd.UserID, tr)
 	if err != nil {
 		s.logger.Error("Failed to create booking entity", "error", err)
 		return err

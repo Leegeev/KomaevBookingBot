@@ -20,10 +20,10 @@ type bookingRepositoryPG struct {
 type bookingRow struct {
 	ID        int64     `db:"id"`
 	RoomID    int64     `db:"room_id"`
+	RoomName  string    `db:"room_name"`
 	CreatedBy int64     `db:"created_by"`
 	StartUTC  time.Time `db:"start_utc"`
 	EndUTC    time.Time `db:"end_utc"`
-	Note      string    `db:"note"`
 	CreatedAt time.Time `db:"created_at"`
 }
 
@@ -139,9 +139,9 @@ func bookingRowToDomain(br bookingRow) (domain.Booking, error) {
 	return domain.Booking{
 		ID:        domain.BookingID(br.ID),
 		RoomID:    domain.RoomID(br.RoomID),
+		RoomName:  br.RoomName,
 		CreatedBy: domain.UserID(br.CreatedBy),
 		Range:     tr,
-		Note:      br.Note,
 		// CreatedAt: br.CreatedAt.UTC(),
 	}, nil
 }

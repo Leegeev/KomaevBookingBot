@@ -25,6 +25,7 @@ type TimeRange struct {
 type Booking struct {
 	ID        BookingID
 	RoomID    RoomID
+	RoomName  string // денормализуем для истории
 	CreatedBy UserID
 	Range     TimeRange // [start, end) UTC
 	Note      string

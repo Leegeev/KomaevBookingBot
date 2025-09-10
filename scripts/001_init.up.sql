@@ -6,13 +6,14 @@ CREATE TABLE rooms (
   name       TEXT NOT NULL,         -- 'Переговорка 1', 'Переговорка 2'
   is_active  BOOLEAN NOT NULL DEFAULT TRUE -- активна для бронирования
 );
+
 CREATE TABLE bookings (
   id          BIGSERIAL PRIMARY KEY,
   room_id     INT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+  room_name TEXT NOT NULL,  -- денормализуем для истории
   created_by  BIGINT NOT NULL,
   time_range  TSTZRANGE NOT NULL,  -- [start, end)
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  note        TEXT
 );
 
 -- Запрещаем пересечения интервалов внутри одной переговорки.
