@@ -99,7 +99,9 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	}
 
 	if upd.Message != nil {
-		if ses := h.sessions.Get(upd.Message.From.ID); ses != nil && ses.BookState == tools.BookStateChoosingStartTime {
+		if handler, ok := h.commandHandlers[upd.Message.Text]; ok {
+			handler(ctx, upd.Message)
+		} else if ses := h.sessions.Get(upd.Message.From.ID); ses != nil && ses.BookState == tools.BookStateChoosingStartTime {
 			h.handleBookTimepick(ctx, upd.Message)
 			return
 		}
@@ -133,6 +135,13 @@ func (h *Handler) registerRoutes() {
 	h.commandHandlers["create_room"] = h.handleCreateRoom
 	h.commandHandlers["deactivate_room"] = h.handleDeactivateRoom
 
+	// Text commands
+	h.commandHandlers[tools.TextMainBookButton] = h.handleBook
+	h.commandHandlers[tools.TextMainMyButton] = h.handleMy
+	h.commandHandlers[tools.TextMainScheduleButton] = h.handleSchedule
+	h.commandHandlers[tools.TextMainCreateRoomButton] = h.handleCreateRoom
+	h.commandHandlers[tools.TextMainDeleteRoomButton] = h.handleDeactivateRoom
+
 	// callbacks
 	// BOOK
 	h.callbackHandlers["book:list"] = h.handleBookList
@@ -150,10 +159,10 @@ func (h *Handler) registerRoutes() {
 	// MY
 	h.callbackHandlers["my:list"] = h.handleMyList
 	h.callbackHandlers["my:back"] = h.handleMyBack
-	// h.callbackHandlers["my:reschedule"] = h.handleMyReschedule
 	h.callbackHandlers["my:cancel"] = h.handleMyCancel
 	h.callbackHandlers["my:list_back"] = h.handleMyListBack
 
+	// h.callbackHandlers["my:reschedule"] = h.handleMyReschedule
 	// h.commandHandlers["create_room"] = h.handleCreateRoomCallback
 	// h.commandHandlers["deactivate_room"] = h.handleDeactivateRoomCallback
 }

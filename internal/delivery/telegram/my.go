@@ -49,8 +49,6 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 	}
 }
 
-// TODO: вернуться к стартовому экрану (например, список действий)
-// h.reply(cq.Message.Chat.ID, "Вы вернулись в главное меню.")
 func (h *Handler) handleMyBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
 	h.log.Info("handleMyBack", "user_id", cq.From.ID)
@@ -193,70 +191,3 @@ func (h *Handler) handleMyListBack(ctx context.Context, cq *tgbotapi.CallbackQue
 		h.log.Error("Failed to edit message on calendar back", "err", err)
 	}
 }
-
-/*
-
-
-// этот обработчик вызывается из какого-то роутера.
-func (h *Handler) handleMyCallback(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	// data формата: my:list:<id> | my:cancel:<id> | my:list_back | my:cancel_back
-
-	parts := strings.Split(cq.Data, ":")
-	if len(parts) < 2 || parts[0] != "my" {
-		return
-	}
-	action := parts[1]
-
-	switch action {
-	case "list":
-		if len(parts) != 3 {
-			return
-		}
-		id, err := strconv.ParseInt(parts[2], 10, 64)
-		if err != nil {
-			return
-		}
-		// Грузим бронь и показываем подтверждение
-		h.handleMyListCallback(ctx, cq, id)
-
-	case "cancel":
-		if len(parts) != 3 {
-			return
-		}
-		id, err := strconv.ParseInt(parts[2], 10, 64)
-		if err != nil {
-			return
-		}
-		h.handleMyCancelCallback(ctx, cq, id)
-
-
-			// // Отменяем бронь
-			// if err := h.uc.CancelBooking(ctx, id); err != nil {
-			// 	h.answerCB(cq, "Не удалось отменить бронь 😕")
-			// 	return
-			// }
-			// // Сообщение-подтверждение
-			// text := "✅ Бронь отменена."
-			// edit := tgbotapi.NewEditMessageText(cq.Message.Chat.ID, cq.Message.MessageID, EscapeMarkdownV2(text))
-			// edit.ParseMode = "MarkdownV2"
-			// // Уберём клавиатуру
-			// editReply := tgbotapi.NewEditMessageReplyMarkup(cq.Message.Chat.ID, cq.Message.MessageID, tgbotapi.InlineKeyboardMarkup{})
-			// if _, err := h.bot.Send(edit); err != nil {
-			// 	h.log.Error("Failed to edit message to 'canceled'", "err", err)
-			// }
-			// if _, err := h.bot.Send(editReply); err != nil {
-			// 	h.log.Error("Failed to clear keyboard", "err", err)
-			// }
-			// h.answerCB(cq, "Готово")
-
-
-	case "list_back":
-		// клавиатура с главного меню.
-
-	case "cancel_back":
-		// вывести результат работы /my
-
-	}
-}
-
-*/

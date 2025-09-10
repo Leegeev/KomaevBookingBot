@@ -7,9 +7,20 @@ import (
 	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
 
-const TextBackInlineKBButton = "🔙 Назад"
+// тексты кнопок
+const (
+	TextBackInlineKBButton = "🔙 Назад"
 
-// тексты главного меню
+	TextMainBookButton = "📝 Забронировать"
+	TextMainMyButton   = "📋 Мои брони"
+
+	TextMainScheduleButton = "📅 Расписание"
+
+	TextMainCreateRoomButton = "🛠️ Создать комнату"
+	TextMainDeleteRoomButton = "🛠️ Удалить комнату"
+)
+
+// тексты /start /help menu
 const (
 	TextMainMenu              SafeText = "Вы в главном меню"
 	TextRedirectingToMainMenu SafeText = "Перенаправляю в главное меню..."
@@ -30,14 +41,14 @@ const (
 📖 • *Справка* — покажу это сообщение`
 )
 
-// тексты для администраторов
+// тексты admin /help /start
 const (
 	TextAdminStartMessage SafeText = "🛠️ • *Создать комнату* / *Удалить комнату* — кнопки для управления комнатами"
 
 	TextAdminHelpMessage SafeText = "🛠️ • *Создать комнату* / *Удалить комнату* — доступны и видны только администраторам чата Коллегии"
 )
 
-// тексты бронирования
+// тексты /book
 const (
 	TextBookIntroduction SafeText = "*Выберите переговорку:*"
 
@@ -67,7 +78,7 @@ const (
 	TextBookNo  SafeText = "❌ Бронь отменена."
 )
 
-// тексты для мои брони
+// тексты /my
 const (
 	TextMyIntroduction SafeText = "*Ваши брони:*"
 	TextMyOperations   SafeText = `Переговорка: %s
