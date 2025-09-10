@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram/tools"
 )
 
 /* ---------- /create_room /deactivate_room ---------- */
@@ -22,7 +23,7 @@ func (h *Handler) handleCreateRoom(ctx context.Context, msg *tgbotapi.Message) {
 		h.log.Error("Failed to get user role in create room command", "user_id", msg.From.ID, "err", err)
 		h.reply(msg.Chat.ID, "Ошибка при получении вашей роли")
 		return
-	} else if role != Administrator && role != Creator {
+	} else if !tools.CheckRoleIsAdmin(role) {
 		h.reply(msg.Chat.ID, "Недостаточно прав.")
 		return
 	}
@@ -51,7 +52,7 @@ func (h *Handler) handleDeactivateRoom(ctx context.Context, msg *tgbotapi.Messag
 		h.log.Error("Failed to get user role in deactivate room command", "user_id", msg.From.ID, "err", err)
 		h.reply(msg.Chat.ID, "Ошибка при получении вашей роли")
 		return
-	} else if role != Administrator && role != Creator {
+	} else if !tools.CheckRoleIsAdmin(role) {
 		h.reply(msg.Chat.ID, "Недостаточно прав.")
 		return
 	}

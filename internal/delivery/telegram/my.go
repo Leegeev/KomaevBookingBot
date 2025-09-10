@@ -58,12 +58,24 @@ func (h *Handler) handleMyBack(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		tools.TextMainMenu.String(),
+		tools.TextRedirectingToMainMenu.String(),
 		tools.BuildBlankInlineKB(),
 	)
 
 	edit.ParseMode = "MarkdownV2"
-	_, _ = h.bot.Send(edit)
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("handleMyBack failed to hide inline KB", "err", err)
+	}
+
+	role, _ := h.getRole(ctx, cq.From.ID)
+	replyKB := tools.BuildMainMenuKB(role)
+
+	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, "Главное меню:")
+	msg.ReplyMarkup = replyKB
+
+	if _, err := h.bot.Send(msg); err != nil {
+		h.log.Error("failed to send main menu", "err", err)
+	}
 }
 
 func (h *Handler) handleMyList(ctx context.Context, cq *tgbotapi.CallbackQuery) {

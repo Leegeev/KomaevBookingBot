@@ -178,3 +178,32 @@ func BuildMyOperationsKB(bookingID int64) tgbotapi.InlineKeyboardMarkup {
 
 	return tgbotapi.NewInlineKeyboardMarkup(row1, row2)
 }
+
+func BuildMainMenuKB(role string) tgbotapi.ReplyKeyboardMarkup {
+	// собираем строки кнопок
+	row1 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("🗓 Забронировать"),
+		tgbotapi.NewKeyboardButton("📋 Мои брони"),
+	)
+	row2 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("Расписание"),
+	)
+
+	rows := [][]tgbotapi.KeyboardButton{row1, row2}
+
+	// если админ — добавляем ещё ряд кнопок
+	if CheckRoleIsAdmin(role) {
+		row3 := tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("Создать комнату"),
+			tgbotapi.NewKeyboardButton("Удалить комнату"),
+		)
+		rows = append(rows, row3)
+	}
+
+	// собираем клавиатуру
+	kb := tgbotapi.NewReplyKeyboard(rows...)
+	kb.ResizeKeyboard = true
+	kb.OneTimeKeyboard = false
+
+	return kb
+}

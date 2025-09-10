@@ -54,3 +54,17 @@ func ParseTimePick(input string) (time.Time, error) {
 
 	return result, nil
 }
+
+const (
+	Creator       = "creator"
+	Administrator = "administrator"
+	Member        = "member"
+)
+
+func CheckRoleIsAdmin(role string) bool {
+	return role == Administrator || role == Creator
+}
+
+func CheckRoleIsSupported(role string) bool {
+	return role == Creator || role == Administrator || role == Member
+}

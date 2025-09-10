@@ -32,7 +32,7 @@ func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
 	if err != nil {
 		h.log.Error("Failed to get user role in start command", "user_id", msg.From.ID, "err", err)
 	} else {
-		if role == Administrator || role == Creator {
+		if tools.CheckRoleIsAdmin(role) {
 			msgText += "\n\n" + tools.TextAdminStartMessage.String()
 		}
 	}
@@ -69,7 +69,7 @@ func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
 	if err != nil {
 		h.log.Error("Failed to get user role in help command", "user_id", msg.From.ID, "err", err)
 	} else {
-		if role == Administrator || role == Creator {
+		if tools.CheckRoleIsAdmin(role) {
 			msgText += "\n\n" + tools.TextAdminHelpMessage.String()
 		}
 	}

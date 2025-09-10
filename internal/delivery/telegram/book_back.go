@@ -18,16 +18,27 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 	h.answerCB(cq, "")
 	h.log.Info("User clicked 'Назад' на списке комнат", "user_id", cq.From.ID)
 
-	msg := tgbotapi.NewEditMessageTextAndMarkup(
+	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		tools.TextMainMenu.String(),
+		tools.TextRedirectingToMainMenu.String(),
 		tools.BuildBlankInlineKB(),
 	)
 
-	msg.ParseMode = "MarkdownV2"
-	_, _ = h.bot.Send(msg)
+	edit.ParseMode = "MarkdownV2"
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("handleMyBack failed to hide inline KB", "err", err)
+	}
 
+	role, _ := h.getRole(ctx, cq.From.ID)
+	replyKB := tools.BuildMainMenuKB(role)
+
+	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, "Главное меню:")
+	msg.ReplyMarkup = replyKB
+
+	if _, err := h.bot.Send(msg); err != nil {
+		h.log.Error("failed to send main menu", "err", err)
+	}
 }
 
 // Step 1.
