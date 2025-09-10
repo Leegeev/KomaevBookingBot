@@ -18,8 +18,8 @@ const qSchedule = `
 // BOOKING REPOSITORY QUERIES
 
 const qInsertBooking = `
-INSERT INTO bookings (room_id, created_by, time_range, note)
-VALUES ($1, $2, tstzrange($3, $4, '[)'), $5)
+INSERT INTO bookings (room_id, user_id, user_name, time_range)
+VALUES ($1, $2, $3, tstzrange($4, $5, '[)'))
 RETURNING id;
 `
 
@@ -33,7 +33,8 @@ SELECT
   id,
   room_id,
   room_name,
-  created_by,
+  user_id,
+  user_name,
   lower(time_range) AS start_utc,
   upper(time_range) AS end_utc,
   created_at
@@ -46,7 +47,8 @@ SELECT
   id,
   room_id,
   room_name,
-  created_by,
+  user_id,
+  user_name,
   lower(time_range) AS start_utc,
   upper(time_range) AS end_utc,
   created_at
@@ -62,12 +64,13 @@ SELECT
   id,
   room_id,
   room_name,
-  created_by,
+  user_id,
+  user_name,
   lower(time_range) AS start_utc,
   upper(time_range) AS end_utc,
   created_at
 FROM bookings
-WHERE created_by = $1
+WHERE user_id = $1
   AND upper(time_range) > $2
 ORDER BY lower(time_range) ASC, id ASC;
 `

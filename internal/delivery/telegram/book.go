@@ -179,12 +179,6 @@ func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message)
 		return
 	}
 	session.BookState = tools.BookStateChoosingDuration
-
-	if session == nil {
-		h.reply(msg.Chat.ID, "Сессия не найдена")
-		return
-	}
-
 	session.StartTime = startTime
 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
