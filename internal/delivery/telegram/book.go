@@ -45,6 +45,7 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 
 	m := tgbotapi.NewMessage(msg.Chat.ID, tools.TextBookIntroduction.String())
 	m.ParseMode = "MarkdownV2"
+	m.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
 
 	if _, err := h.bot.Send(m); err != nil {

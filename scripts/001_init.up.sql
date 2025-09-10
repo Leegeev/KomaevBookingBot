@@ -1,5 +1,5 @@
 -- расширение для корректных эксклюзивных ограничений по диапазонам
-CREATE EXTENSION IF NOT EXISTS btree_gist;
+-- CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE TABLE rooms (
   id         SERIAL PRIMARY KEY,
@@ -8,13 +8,13 @@ CREATE TABLE rooms (
 );
 
 CREATE TABLE bookings (
-  id          BIGSERIAL PRIMARY KEY,
-  room_id     INT NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+  id          SERIAL PRIMARY KEY,
+  room_id     INT NOT NULL,
   room_name TEXT NOT NULL,  -- денормализуем для истории
   user_id  BIGINT NOT NULL,
   user_name TEXT NOT NULL,
   time_range  TSTZRANGE NOT NULL,  -- [start, end)
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Запрещаем пересечения интервалов внутри одной переговорки.

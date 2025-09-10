@@ -38,6 +38,7 @@ func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
 	}
 
 	msgOut := tgbotapi.NewMessage(msg.Chat.ID, msgText)
+	msgOut.ReplyMarkup = tools.BuildMainMenuKB(role)
 	msgOut.ParseMode = "MarkdownV2"
 
 	if _, err := h.bot.Send(msgOut); err != nil {
@@ -75,6 +76,7 @@ func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
 	}
 
 	msgOut := tgbotapi.NewMessage(msg.Chat.ID, msgText)
+	msgOut.ReplyMarkup = tools.BuildMainMenuKB(role)
 	msgOut.ParseMode = "MarkdownV2"
 
 	if _, err := h.bot.Send(msgOut); err != nil {

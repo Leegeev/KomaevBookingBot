@@ -98,6 +98,13 @@ const (
 
 )
 
+// тексты /rooms
+const (
+	TextRoomNameInput SafeText = `Введите название комнаты:
+(Сразу после ввода названия, она будет создана)`
+	// TextRoomDeleteInput SafeText = `Введите ID комнаты для деактивации:
+)
+
 func BuildBookingStr(bks []domain.Booking) string {
 	var b strings.Builder
 	for i, bk := range bks {

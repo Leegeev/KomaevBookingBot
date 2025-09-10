@@ -45,7 +45,7 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 	if _, err := h.bot.GetMe(); err != nil {
 		return fmt.Errorf("getMe: %w", err)
 	}
-	h.bot.Debug = true
+	h.bot.Debug = false
 
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 30
@@ -77,6 +77,7 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 
 	if err := h.checkSupported(ctx, upd); err != nil {
 		h.reply(upd.FromChat().ChatConfig().ChatID, err.Error())
+		return
 	}
 
 	if upd.Message.IsCommand() {
@@ -101,6 +102,7 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	if upd.Message != nil {
 		if handler, ok := h.commandHandlers[upd.Message.Text]; ok {
 			handler(ctx, upd.Message)
+			return
 		} else if ses := h.sessions.Get(upd.Message.From.ID); ses != nil && ses.BookState == tools.BookStateChoosingStartTime {
 			h.handleBookTimepick(ctx, upd.Message)
 			return
@@ -163,6 +165,4 @@ func (h *Handler) registerRoutes() {
 	h.callbackHandlers["my:list_back"] = h.handleMyListBack
 
 	// h.callbackHandlers["my:reschedule"] = h.handleMyReschedule
-	// h.commandHandlers["create_room"] = h.handleCreateRoomCallback
-	// h.commandHandlers["deactivate_room"] = h.handleDeactivateRoomCallback
 }

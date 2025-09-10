@@ -30,7 +30,7 @@ func (h *Handler) handleCreateRoom(ctx context.Context, msg *tgbotapi.Message) {
 
 	name := strings.TrimSpace(msg.CommandArguments())
 	if name == "" {
-		h.reply(msg.Chat.ID, "Формат: `/create_room <name>`")
+		h.reply(msg.Chat.ID, tools.TextRoomNameInput.String())
 		return
 	}
 	if err := h.uc.AdminCreateRoom(ctx, name); err != nil {
@@ -40,6 +40,7 @@ func (h *Handler) handleCreateRoom(ctx context.Context, msg *tgbotapi.Message) {
 	h.reply(msg.Chat.ID, "Комната создана.")
 }
 
+// TODO: УДАЛЯТЬ КОМНАТЫ ПО inline КНОПКАМ
 func (h *Handler) handleDeactivateRoom(ctx context.Context, msg *tgbotapi.Message) {
 	if err := ctx.Err(); err != nil {
 		h.log.Warn("Context canceled in /DeleteRoom handler", "user", msg.From.UserName, "chat_id", msg.Chat.ID, "err", ctx.Err())

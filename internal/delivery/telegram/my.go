@@ -29,7 +29,7 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 	if err != nil {
 		h.log.Error("Failed to list user bookings", "user_id", msg.From.ID, "error", err)
 		h.notifyAdmin(fmt.Sprintf("❗ *Ошибка:* `%s`", err.Error()))
-		h.reply(msg.Chat.ID, "Возникла ошибка при получении ваших броней.")
+		h.reply(msg.Chat.ID, "Возникла ошибка при получении ваших броней. Тех. поддержка уже уведомлена.")
 		return
 	}
 
@@ -38,11 +38,10 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	kb := tools.BuildMyListKB(bookings, h.cfg.OfficeTZ)
-
 	m := tgbotapi.NewMessage(msg.Chat.ID, tools.TextMyIntroduction.String())
 	m.ParseMode = "MarkdownV2"
-	m.ReplyMarkup = kb
+	m.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+	m.ReplyMarkup = tools.BuildMyListKB(bookings, h.cfg.OfficeTZ)
 
 	if _, err := h.bot.Send(m); err != nil {
 		h.log.Error("Failed to send /my list", "err", err)
