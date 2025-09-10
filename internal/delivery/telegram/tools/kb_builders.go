@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -147,15 +146,14 @@ func formatDurationButtonText(d float64) string {
 	return fmt.Sprintf("%.1f", d)
 }
 
-func BuildMyListKB(bks []domain.Booking) tgbotapi.InlineKeyboardMarkup {
+func BuildMyListKB(bks []domain.Booking, OfficeTZ *time.Location) tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, len(bks))
 	for _, bk := range bks {
-		start := bk.Range.Start.In(h.cfg.OfficeTZ)
-		end := bk.Range.End.In(h.cfg.OfficeTZ)
-		room, _ := h.uc.GetRoom(int64(bk.RoomID))
+		start := bk.Range.Start.In(OfficeTZ)
+		end := bk.Range.End.In(OfficeTZ)
 
 		btnText := fmt.Sprintf("#%s — %s %02d:%02d–%02d:%02d",
-			room.Name, start.Format("01-02"),
+			bk.RoomName, start.Format("01-02"),
 			start.Hour(), start.Minute(), end.Hour(), end.Minute())
 
 		data := fmt.Sprintf("my:list:%d", bk.ID)
@@ -165,4 +163,5 @@ func BuildMyListKB(bks []domain.Booking) tgbotapi.InlineKeyboardMarkup {
 	}
 
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("my:back")))
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }

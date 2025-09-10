@@ -148,7 +148,7 @@ func (h *Handler) registerRoutes() {
 	h.callbackHandlers["book:confirm_back"] = h.handleBookConfirmBack
 
 	// MY
-	h.callbackHandlers["my:list"] = h.handleMyCallback
+	h.callbackHandlers["my:list"] = h.handleMyList
 	h.callbackHandlers["my:back"] = h.handleMyListBack
 
 	// h.commandHandlers["create_room"] = h.handleCreateRoomCallback

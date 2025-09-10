@@ -36,22 +36,29 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
+	kb := tools.BuildMyListKB(bookings, h.cfg.OfficeTZ)
+
 	text := "*Ваши брони:*"
 
 	m := tgbotapi.NewMessage(msg.Chat.ID, tools.EscapeMarkdownV2(text))
 	m.ParseMode = "MarkdownV2"
-	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
+	m.ReplyMarkup = kb
 
 	if _, err := h.bot.Send(m); err != nil {
 		h.log.Error("Failed to send /my list", "err", err)
 	}
 }
 
-func (h *Handler) handleMyCancelCallback(ctx context.Context, cq *tgbotapi.CallbackQuery, id BookingID) {
+func (h *Handler) handleMyList(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	// my:reschedule:<id>
+	// my:cancel:<id>
+	// my:list_back
+
 	return
 }
 
-func (h *Handler) handleMyListCallback(ctx context.Context, cq *tgbotapi.CallbackQuery, id BookingID) {
+func (h *Handler) handleMyListBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	// to main menu
 	return
 }
 
