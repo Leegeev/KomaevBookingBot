@@ -74,11 +74,9 @@ func (h *Handler) checkSupported(ctx context.Context, upd tgbotapi.Update) error
 	return fmt.Errorf("неизвестный тип update, обратитесь в поддержку")
 }
 
-const AdminID int64 = 123456789 // TODO: заменить на реальный ID администратора
-
 func (h *Handler) notifyAdmin(msg string) {
 	escaped := tools.EscapeMarkdownV2(msg)
-	adminMsg := tgbotapi.NewMessage(AdminID, escaped)
+	adminMsg := tgbotapi.NewMessage(h.cfg.AdminID, escaped)
 	adminMsg.ParseMode = "MarkdownV2"
 
 	if _, err := h.bot.Send(adminMsg); err != nil {

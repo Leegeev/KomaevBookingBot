@@ -12,3 +12,4 @@ telegram:
   token: ""
   office_tz: ""
   group_chat_id: ""
+  admin_id: ""

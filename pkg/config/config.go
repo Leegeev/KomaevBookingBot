@@ -28,6 +28,7 @@ type Telegram struct {
 	OfficeTZ    *time.Location
 	tzinString  string `mapstructure:"office_tz"`
 	GroupChatID int64  `mapstructure:"group_chat_id"` // ID группы для проверки админства
+	AdminID     int64  `mapstructure:"admin_id"`      // ID админа для уведомлений
 }
 
 type Config struct {
@@ -94,6 +95,7 @@ func bindEnv() {
 	_ = viper.BindEnv("telegram.token", "TELEGRAM_TOKEN")
 	_ = viper.BindEnv("telegram.tzinString", "TELEGRAM_OFFICE_TZ")
 	_ = viper.BindEnv("telegram.group_chat_id", "TELEGRAM_GROUP_CHAT_ID")
+	_ = viper.BindEnv("telegram.admin_id", "TELEGRAM_ADMIN_ID")
 
 }
 
