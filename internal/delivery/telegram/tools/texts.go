@@ -69,10 +69,10 @@ const (
 	TextBookAskDuration SafeText = "🕗 Выберите продолжительность:"
 
 	TextBookAskConfirmation SafeText = `Подтвердите детали брони:
-Переговорка: %s
-Дата: %s
-Начало: %s
-Продолжительность: %s`
+Переговорка: *%s*
+Дата: *%s*
+Начало: *%s*
+Продолжительность: *%s*`
 
 	TextBookYes SafeText = "✅ Бронь успешно создана!"
 	TextBookNo  SafeText = "❌ Бронь отменена."
@@ -82,9 +82,9 @@ const (
 const (
 	TextMyIntroduction SafeText = "*Ваши брони:*"
 	TextMyOperations   SafeText = `Переговорка: %s
-Дата: %s
-Начало: %s
-Продолжительность: %s`
+Дата: *%s*
+Начало: *%s*
+Продолжительность: *%s*`
 
 	TextMyBookingCancelled SafeText = "✅ Ваша бронь успешно отменена."
 	TextMyBookingCancelErr SafeText = "❌ Не удалось отменить бронь. Тех. поддержка уже уведомлена."
@@ -105,7 +105,7 @@ const (
 	// TextRoomDeleteInput SafeText = `Введите ID комнаты для деактивации:
 )
 
-func BuildBookingStr(bks []domain.Booking) string {
+func BuildBookingStr(bks []domain.Booking) SafeText {
 	var b strings.Builder
 	for i, bk := range bks {
 		if i == 0 {
@@ -118,27 +118,42 @@ func BuildBookingStr(bks []domain.Booking) string {
 			bk.UserName,
 		))
 	}
-	return b.String()
+	return SafeText(b.String())
 }
 
-func BuildConfirmationStr(sess *BookingSession) string {
-	return fmt.Sprintf(
+func BuildConfirmationStr(sess *BookingSession) SafeText {
+	// Разложим duration
+	hours := int(sess.Duration.Hours())
+	minutes := int(sess.Duration.Minutes()) % 60
+
+	var durationStr string
+	if hours > 0 {
+		durationStr = fmt.Sprintf("%dч", hours)
+	}
+	if minutes > 0 {
+		if durationStr != "" {
+			durationStr += " "
+		}
+		durationStr += fmt.Sprintf("%dмин", minutes)
+	}
+
+	return SafeText(fmt.Sprintf(
 		TextBookAskConfirmation.String(),
 		sess.RoomName,
 		sess.Date.Format("02.01.2006"),
 		sess.StartTime.Format("15:04"),
-		sess.Duration,
-	)
+		durationStr,
+	))
 }
 
-func BuildMyOperationStr(bk domain.Booking) string {
-	return fmt.Sprintf(
+func BuildMyOperationStr(bk domain.Booking) SafeText {
+	return SafeText(fmt.Sprintf(
 		TextMyOperations.String(),
 		bk.RoomName,
 		bk.Range.Start.Format("02.01.2006"),
 		bk.Range.Start.Format("15:04"),
 		bk.Range.End.Sub(bk.Range.Start).String(),
-	)
+	))
 }
 
 type SafeText string

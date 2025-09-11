@@ -36,11 +36,9 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	h.log.Debug("Rooms from UC", "rooms", rooms)
 	rows := tools.BuildRoomListKB(rooms)
 
 	// CODE BELOW REMOVES DA KEYBOARD
-	// h.log.Debug("Deleting keyboard", "chat_id", msg.Chat.ID)
 	emptyMsg := tgbotapi.NewMessage(msg.Chat.ID, "Скрываю клавиатуру...")
 	emptyMsg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	sent, _ := h.bot.Send(emptyMsg)
@@ -106,6 +104,10 @@ func (h *Handler) handleBookCalendarNavigation(ctx context.Context, cq *tgbotapi
 	parts := strings.Split(cq.Data, ":")
 	shift, _ := strconv.ParseInt(parts[2], 10, 64) // -3 -2 -1 1 2 3
 
+	// Если пользователь хочет передвинуться в прошлое, игнорируем
+	if shift < 0 {
+		return
+	}
 	// 2. Обновляем только клавиатуру
 	editMarkup := tgbotapi.NewEditMessageReplyMarkup(
 		cq.Message.Chat.ID,
@@ -162,7 +164,6 @@ func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQ
 // Step 2.
 // Обработчик РУЧНОГО ввода времени.
 func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message) {
-
 	startTime, err := tools.ParseTimePick(msg.Text)
 	if err != nil {
 		reply := tgbotapi.NewMessage(msg.Chat.ID, tools.TextBookTimeInvalidInput.String())
@@ -198,9 +199,15 @@ func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message)
 	newMsg.ParseMode = "MarkdownV2"
 	newMsg.ReplyMarkup = tools.BuildDurationKB()
 
-	if _, err := h.bot.Send(newMsg); err != nil {
+	sentMsg, err := h.bot.Send(newMsg)
+	if err != nil {
 		h.log.Error("Failed to send a new message on timepick", "err", err)
+		return
 	}
+	// обновляем messageID в сессии
+	// чтобы при НАЗАД можно было его отредактировать
+	// (иначе будет редактироваться первое сообщение, а не текущее)
+	session.MessageID = sentMsg.MessageID
 }
 
 func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQuery) {
@@ -226,16 +233,20 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 	session.Duration = time.Duration(durF * float64(time.Hour))
 	session.EndTime = session.StartTime.Add(session.Duration)
 	session.BookState = tools.BookStateConfirmingBooking
+	session.MessageID = cq.Message.MessageID
 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		tools.BuildConfirmationStr(session),
+		tools.BuildConfirmationStr(session).String(),
 		tools.BuildConfirmationKB(),
 	)
 
 	edit.ParseMode = "MarkdownV2"
 	if _, err := h.bot.Send(edit); err != nil {
+		// level=ERROR msg="Failed to edit message on duration"
+		// err="Bad Request: can't parse entities:
+		// Character '.' is reserved and must be escaped with the preceding '\\'"
 		h.log.Error("Failed to edit message on duration", "err", err)
 	}
 }
@@ -249,7 +260,7 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 	confirm, _ := strconv.ParseInt(parts[2], 10, 64) // 0 || 1
 
 	session := h.sessions.Get(cq.From.ID)
-
+	session.MessageID = cq.Message.MessageID
 	sess := usecase.CreateBookingCmd{
 		RoomID:   session.RoomID,
 		RoomName: session.RoomName,
@@ -271,18 +282,17 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 		text = tools.TextBookNo.String()
 	}
 
-	edit := tgbotapi.NewEditMessageTextAndMarkup(
+	edit := tgbotapi.NewEditMessageReplyMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		tools.BuildConfirmationStr(session),
 		tools.BuildBlankInlineKB(),
 	)
 
-	edit.ParseMode = "MarkdownV2"
 	if _, err := h.bot.Send(edit); err != nil {
 		h.log.Error("Failed to edit message on confirmation", "err", err)
 	}
 	newMsg := tgbotapi.NewMessage(cq.Message.Chat.ID, text)
+	newMsg.ReplyMarkup = tools.BuildMainMenuKB(tools.Member)
 	newMsg.ParseMode = "MarkdownV2"
 	// newMsg.ReplyMarkup = tools.BuildDurationKB()
 

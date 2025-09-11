@@ -51,7 +51,7 @@ func (h *Handler) handleSchedule(ctx context.Context, msg *tgbotapi.Message) {
 			b.WriteString(fmt.Sprintf("*%s*\n_Нет бронирований на ближайшую неделю_\n", room.Name))
 		}
 
-		b.WriteString(tools.BuildBookingStr(bookings))
+		b.WriteString(tools.BuildBookingStr(bookings).String())
 
 		m := tgbotapi.NewMessage(msg.Chat.ID, tools.EscapeMarkdownV2(b.String()))
 		m.ParseMode = "MarkdownV2"

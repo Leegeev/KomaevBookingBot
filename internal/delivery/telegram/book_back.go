@@ -102,6 +102,8 @@ func (h *Handler) handleBookDurationBack(ctx context.Context, cq *tgbotapi.Callb
 			}),
 	)
 
+	h.sessions.Get(cq.From.ID).BookState = tools.BookStateChoosingStartTime
+
 	edit.ParseMode = "MarkdownV2"
 	if _, err := h.bot.Send(edit); err != nil {
 		h.log.Error("Failed to edit message on BookDurationBack", "err", err)

@@ -38,20 +38,18 @@ func (r *bookingRepositoryPG) Create(ctx context.Context, b domain.Booking) erro
 	start := b.Range.Start
 	end := b.Range.End
 
-	var (
-		newID     int64
-		createdAt time.Time
-	)
+	var newID int64
 
 	err := r.db.QueryRowxContext(
 		ctx,
 		qInsertBooking,
 		b.RoomID,
+		b.RoomName,
 		b.UserID,
 		b.UserName,
 		start,
 		end,
-	).Scan(&newID, &createdAt)
+	).Scan(&newID)
 	if err != nil {
 		return mapPgOverlapErr(err)
 	}

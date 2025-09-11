@@ -99,7 +99,7 @@ func (h *Handler) handleMyList(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		tools.BuildMyOperationStr(bk),
+		tools.BuildMyOperationStr(bk).String(),
 		tools.BuildMyOperationsKB(id),
 	)
 
@@ -122,7 +122,7 @@ func (h *Handler) handleMyList(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 
 func (h *Handler) handleMyCancel(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
-	h.log.Info("handleMyReschedule", "data", cq.Data, "user", cq.From.UserName)
+	h.log.Info("handleMyCancel", "data", cq.Data, "user", cq.From.UserName)
 
 	parts := strings.Split(cq.Data, ":")
 	id, _ := strconv.ParseInt(parts[2], 10, 64) // id of the picked booking.

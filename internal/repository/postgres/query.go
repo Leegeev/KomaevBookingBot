@@ -18,8 +18,8 @@ const qSchedule = `
 // BOOKING REPOSITORY QUERIES
 
 const qInsertBooking = `
-INSERT INTO bookings (room_id, user_id, user_name, time_range)
-VALUES ($1, $2, $3, tstzrange($4, $5, '[)'))
+INSERT INTO bookings (room_id, room_name, user_id, user_name, time_range)
+VALUES ($1, $2, $3, $4, tstzrange($5, $6, '[)'))
 RETURNING id;
 `
 
@@ -113,12 +113,12 @@ ORDER BY id;
 `
 
 const qGetRoomByID = `
-SELECT id, name
+SELECT id, name, is_active
 FROM rooms
 WHERE id = $1
 `
 const qGetRoomByName = `
-SELECT id, name
+SELECT id, name, is_active
 FROM rooms
 WHERE name = $1
 `
