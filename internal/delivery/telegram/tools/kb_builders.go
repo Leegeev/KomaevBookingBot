@@ -76,7 +76,7 @@ func BuildCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
 		date := shiftedDate.AddDate(0, 0, i)
 		if todayW > i {
 			row3display = "❌"
-			callback = ""
+			callback = "no:op"
 		} else {
 			row3display = date.Format("02.01")
 			callback = fmt.Sprintf("book:calendar:%s", date.Format("2006-01-02"))

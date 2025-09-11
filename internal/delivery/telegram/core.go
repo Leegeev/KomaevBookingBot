@@ -183,5 +183,10 @@ func (h *Handler) registerRoutes() {
 	h.callbackHandlers["my:cancel"] = h.handleMyCancel
 	h.callbackHandlers["my:list_back"] = h.handleMyListBack
 
+	// no:op
+	h.callbackHandlers["no:op"] = func(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+		h.answerCB(cq, "")
+	}
+
 	// h.callbackHandlers["my:reschedule"] = h.handleMyReschedule
 }
