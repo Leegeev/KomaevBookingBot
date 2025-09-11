@@ -73,6 +73,8 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 		return
 	}
 
+	h.log.Debug("There is panic when setting session", "config:", h.cfg)
+
 	// Создаем bookingSession и сохраняем в in-memory storage
 	h.sessions.Set(&tools.BookingSession{
 		BookState: tools.BookStateChoosingDate,

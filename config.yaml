@@ -10,6 +10,6 @@ database:
 
 telegram:
   token: ""
-  office_tz: ""
+  office_tz: "Europe/Moscow"
   group_chat_id: ""
   admin_id: ""

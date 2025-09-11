@@ -24,11 +24,11 @@ type DB struct {
 }
 
 type Telegram struct {
-	Token       string `mapstructure:"token"`
-	OfficeTZ    *time.Location
-	tzinString  string `mapstructure:"office_tz"`
-	GroupChatID int64  `mapstructure:"group_chat_id"` // ID группы для проверки админства
-	AdminID     int64  `mapstructure:"admin_id"`      // ID админа для уведомлений
+	Token          string `mapstructure:"token"`
+	OfficeTZ       *time.Location
+	OfficeTZString string `mapstructure:"office_tz"`
+	GroupChatID    int64  `mapstructure:"group_chat_id"` // ID группы для проверки админства
+	AdminID        int64  `mapstructure:"admin_id"`      // ID админа для уведомлений
 }
 
 type Config struct {
@@ -70,7 +70,7 @@ func LoadConfig(logger logger.Logger) (*Config, error) {
 		logger.Error("Error unmarshalling config", "error", err)
 		return nil, fmt.Errorf("ошибка декодирования config: %w", err)
 	}
-	locStr := cfg.Telegram.tzinString
+	locStr := cfg.Telegram.OfficeTZString
 	if locStr != "" {
 		loc, err := time.LoadLocation(locStr)
 		if err != nil {
@@ -93,7 +93,6 @@ func bindEnv() {
 
 	// Telegram
 	_ = viper.BindEnv("telegram.token", "TELEGRAM_TOKEN")
-	_ = viper.BindEnv("telegram.tzinString", "TELEGRAM_OFFICE_TZ")
 	_ = viper.BindEnv("telegram.group_chat_id", "TELEGRAM_GROUP_CHAT_ID")
 	_ = viper.BindEnv("telegram.admin_id", "TELEGRAM_ADMIN_ID")
 

@@ -104,9 +104,6 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 			"chat_id", upd.CallbackQuery.Message.Chat.ID,
 			"data", upd.CallbackQuery.Data,
 		)
-		// i ended up here.
-		// so basically i have book in prefix, when what i really need is
-		// first TWO parts of callback data
 		cb := strings.Split(upd.CallbackQuery.Data, ":")
 		prefix := cb[0] + ":" + cb[1]
 		if handler, ok := h.callbackHandlers[prefix]; ok {
