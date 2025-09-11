@@ -4,7 +4,7 @@
 CREATE TABLE rooms (
   id         SERIAL PRIMARY KEY,
   name       TEXT NOT NULL,         -- 'Переговорка 1', 'Переговорка 2'
-  is_active  BOOLEAN NOT NULL DEFAULT TRUE -- активна для бронирования
+  is_active  BOOLEAN NOT NULL -- активна для бронирования
 );
 
 CREATE TABLE bookings (

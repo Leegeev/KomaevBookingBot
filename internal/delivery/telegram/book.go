@@ -41,11 +41,21 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
+	h.log.Debug("Rooms from UC", "rooms", rooms)
 	rows := tools.BuildRoomListKB(rooms)
+
+	// CODE BELOW REMOVES DA KEYBOARD
+	// h.log.Debug("Deleting keyboard", "chat_id", msg.Chat.ID)
+	emptyMsg := tgbotapi.NewMessage(msg.Chat.ID, "Скрываю клавиатуру...")
+	emptyMsg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+	sent, _ := h.bot.Send(emptyMsg)
+
+	del := tgbotapi.NewDeleteMessage(msg.Chat.ID, sent.MessageID)
+	h.bot.Send(del)
+	// END OF CODE
 
 	m := tgbotapi.NewMessage(msg.Chat.ID, tools.TextBookIntroduction.String())
 	m.ParseMode = "MarkdownV2"
-	m.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
 
 	if _, err := h.bot.Send(m); err != nil {

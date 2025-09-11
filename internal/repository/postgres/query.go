@@ -92,8 +92,8 @@ WHERE upper(time_range) < $1;
 // ROOM REPOSITORY QUERIES
 
 const qInsertRoom = `
-INSERT INTO rooms (name)
-VALUES ($1)
+INSERT INTO rooms (name, is_active)
+VALUES ($1, $2)
 RETURNING id;
 `
 
@@ -106,7 +106,7 @@ WHERE id = $1;
 
 // Список ТОЛЬКО активных
 const qListActiveRooms = `
-SELECT id, name
+SELECT id, name, is_active
 FROM rooms
 WHERE is_active = TRUE
 ORDER BY id;

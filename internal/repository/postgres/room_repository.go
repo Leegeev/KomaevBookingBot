@@ -12,12 +12,12 @@ import (
 )
 
 type roomRepositoryPG struct {
-	db     *sqlx.DB
-	logger logger.Logger
+	db  *sqlx.DB
+	log logger.Logger
 }
 
 func NewRoomRepositoryPG(db *sqlx.DB, l logger.Logger) *roomRepositoryPG {
-	return &roomRepositoryPG{db: db, logger: l}
+	return &roomRepositoryPG{db: db, log: l}
 }
 
 type roomRow struct {
@@ -26,12 +26,10 @@ type roomRow struct {
 	IsActive bool   `db:"is_active"`
 }
 
-// methods
-
 func (r *roomRepositoryPG) Create(ctx context.Context, room domain.Room) (domain.RoomID, error) {
-	// Хотим убедиться, что вставка прошла — читаем id, но наружу его не вернуть (сигнатура Create не позволяет)
+	r.log.Debug("Creating room", "name", room.Name)
 	var newID int64
-	if err := r.db.QueryRowxContext(ctx, qInsertRoom, room.Name).Scan(&newID); err != nil {
+	if err := r.db.QueryRowxContext(ctx, qInsertRoom, room.Name, true).Scan(&newID); err != nil {
 		// тут можно дополнительно замапить уникальное имя на доменную ошибку, если нужно
 		// (код PG: 23505). Иначе — отдать как есть.
 		return 0, fmt.Errorf("failed to create room: %w", err)
@@ -64,10 +62,12 @@ func (r *roomRepositoryPG) List(ctx context.Context) ([]domain.Room, error) {
 	if err := r.db.SelectContext(ctx, &rows, qListActiveRooms); err != nil {
 		return nil, err
 	}
+	r.log.Debug("ROWS from REPOSITORY", "ROWS", rows)
 	rooms := make([]domain.Room, 0, len(rows))
 	for _, rr := range rows {
 		rooms = append(rooms, roomRowToDomain(rr))
 	}
+	r.log.Debug("Rooms from REPOSITORY", "rooms", rooms)
 	return rooms, nil
 }
 
