@@ -25,11 +25,6 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	h.log.Info("Received /book command",
-		"user", msg.From.UserName,
-		"user_id", msg.From.ID,
-		"chat_id", msg.Chat.ID)
-
 	rooms, err := h.uc.ListRooms(ctx)
 	if errors.Is(err, domain.ErrNoRoomsAvailable) {
 		h.reply(msg.From.ID, tools.TextBookNoRoomsAvailable.String())
@@ -68,7 +63,6 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 // Строит календарь
 func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
-	h.log.Info("handling picked room in room list", "data", cq.Data, "user", cq.From.UserName)
 
 	parts := strings.Split(cq.Data, ":")
 	id, _ := strconv.ParseInt(parts[2], 10, 64)
@@ -106,7 +100,7 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 // Step 0.+-1
 // Хендлер Навигации по календарю
 func (h *Handler) handleBookCalendarNavigation(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	h.log.Info("calendar nav callback", "data", cq.Data, "user", cq.From.UserName)
+	h.answerCB(cq, "")
 
 	// 1. Парсим направление навигации
 	parts := strings.Split(cq.Data, ":")
@@ -168,10 +162,6 @@ func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQ
 // Step 2.
 // Обработчик РУЧНОГО ввода времени.
 func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message) {
-	h.log.Info("Received users book time input",
-		"user", msg.From.UserName,
-		"user_id", msg.From.ID,
-		"chat_id", msg.Chat.ID)
 
 	startTime, err := tools.ParseTimePick(msg.Text)
 	if err != nil {

@@ -80,7 +80,14 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 		return
 	}
 
-	if upd.Message.IsCommand() {
+	if upd.Message != nil && upd.Message.IsCommand() {
+		h.log.Info("Received command",
+			"user", upd.Message.From.UserName,
+			"user_id", upd.Message.From.ID,
+			"chat_id", upd.Message.Chat.ID,
+			"command", upd.Message.Command(),
+			"args", upd.Message.CommandArguments(),
+		)
 		cmd := upd.Message.Command()
 		if handler, ok := h.commandHandlers[cmd]; ok {
 			handler(ctx, upd.Message)
@@ -91,8 +98,17 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	}
 
 	if upd.CallbackQuery != nil {
+		h.log.Info("Received callback",
+			"user", upd.CallbackQuery.From.UserName,
+			"user_id", upd.CallbackQuery.From.ID,
+			"chat_id", upd.CallbackQuery.Message.Chat.ID,
+			"data", upd.CallbackQuery.Data,
+		)
+		// i ended up here.
+		// so basically i have book in prefix, when what i really need is
+		// first TWO parts of callback data
 		cb := strings.Split(upd.CallbackQuery.Data, ":")
-		prefix := cb[0]
+		prefix := cb[0] + ":" + cb[1]
 		if handler, ok := h.callbackHandlers[prefix]; ok {
 			handler(ctx, upd.CallbackQuery)
 		}
@@ -100,6 +116,12 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	}
 
 	if upd.Message != nil {
+		h.log.Info("Received message",
+			"user", upd.Message.From.UserName,
+			"user_id", upd.Message.From.ID,
+			"chat_id", upd.Message.Chat.ID,
+			"text", upd.Message.Text,
+		)
 		if handler, ok := h.commandHandlers[upd.Message.Text]; ok {
 			handler(ctx, upd.Message)
 			return
