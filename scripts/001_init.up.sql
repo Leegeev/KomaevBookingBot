@@ -1,5 +1,5 @@
 -- расширение для корректных эксклюзивных ограничений по диапазонам
--- CREATE EXTENSION IF NOT EXISTS btree_gist;
+CREATE EXTENSION IF NOT EXISTS btree_gist;
 
 CREATE TABLE rooms (
   id         SERIAL PRIMARY KEY,

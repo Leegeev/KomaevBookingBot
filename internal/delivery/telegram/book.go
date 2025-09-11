@@ -76,6 +76,7 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 		BookState: tools.BookStateChoosingDate,
 		ChatID:    cq.Message.Chat.ID,
 		UserID:    cq.From.ID,
+		UserName:  cq.From.UserName,
 		MessageID: cq.Message.MessageID,
 		RoomID:    room.ID,
 		RoomName:  room.Name,
@@ -265,6 +266,7 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 		RoomID:   session.RoomID,
 		RoomName: session.RoomName,
 		UserID:   domain.UserID(session.UserID),
+		UserName: session.UserName,
 		Start:    session.StartTime,
 		End:      session.EndTime,
 	}
@@ -273,7 +275,12 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 
 	if confirm == 1 {
 		err := h.uc.CreateBooking(ctx, sess)
-		if err != nil {
+		if err != nil && errors.Is(err, domain.ErrOverlapsExisting) {
+			h.handleOverlapConfirm(cq)
+			return
+		} else if err != nil {
+			h.log.Error("Failed to create booking", "err", err)
+			h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при создании брони:* `%s`", err.Error()))
 			h.reply(cq.Message.Chat.ID, "Ошибка при создании брони: "+err.Error())
 			return
 		}
@@ -298,5 +305,25 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 
 	if _, err := h.bot.Send(newMsg); err != nil {
 		h.log.Error("Failed to send a new message on confirmation", "err", err)
+	}
+}
+
+func (h *Handler) handleOverlapConfirm(cq *tgbotapi.CallbackQuery) {
+	edit := tgbotapi.NewEditMessageReplyMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		tools.BuildBlankInlineKB(),
+	)
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("Failed to edit message on confirmation", "err", err)
+	}
+	// h.reply(cq.Message.Chat.ID, string(/)
+
+	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, tools.TextBookOverlapError.String())
+	msg.ReplyMarkup = tools.BuildMainMenuKB(tools.Member)
+	msg.ParseMode = "MarkdownV2"
+
+	if _, err := h.bot.Send(msg); err != nil {
+		h.log.Error("failed to send main menu", "err", err)
 	}
 }

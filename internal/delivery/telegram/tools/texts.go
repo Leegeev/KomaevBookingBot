@@ -62,7 +62,7 @@ const (
 	TextBookAskTimeInput SafeText = `Введите начало брони:
 (в формате xx:00 ИЛИ xx:30)`
 
-	TextBookTimeInvalidInput SafeText = `❌ Неверный формат времени.\n
+	TextBookTimeInvalidInput SafeText = `❌ Неверный формат времени.
 Пожалуйста, введите время в формате xx:00 ИЛИ xx:30
 (Например 12:00 или 12:30)`
 
@@ -73,6 +73,7 @@ const (
 Дата: *%s*
 Начало: *%s*
 Продолжительность: *%s*`
+	TextBookOverlapError SafeText = "❌ В это время уже есть бронь. Пожалуйста, попробуйте снова."
 
 	TextBookYes SafeText = "✅ Бронь успешно создана!"
 	TextBookNo  SafeText = "❌ Бронь отменена."
@@ -93,7 +94,7 @@ const (
 // тексты /schedule
 const (
 	TextScheduleIntroduction SafeText = "*Расписание на неделю:*"
-	TextScheduleBooking      SafeText = `- %s %s:%s %s`
+	TextScheduleBooking      SafeText = `⁃%s %s:%s-%s:%s %s`
 	// - мм.дд 16:30-17:30 @leegeev
 
 )
@@ -111,10 +112,12 @@ func BuildBookingStr(bks []domain.Booking) SafeText {
 		if i == 0 {
 			b.WriteString(fmt.Sprintf("*%s*\n", bk.RoomName))
 		}
-		b.WriteString(fmt.Sprintf(TextScheduleBooking.String()+"\n",
+		b.WriteString(fmt.Sprintf(string(TextScheduleBooking)+"\n",
 			bk.Range.Start.Format("02.01"),
 			bk.Range.Start.Format("15"),
 			bk.Range.Start.Format("04"),
+			bk.Range.End.Format("15"),
+			bk.Range.End.Format("04"),
 			bk.UserName,
 		))
 	}

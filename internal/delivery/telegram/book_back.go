@@ -35,6 +35,7 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 
 	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, "Главное меню:")
 	msg.ReplyMarkup = replyKB
+	msg.ParseMode = "MarkdownV2"
 
 	if _, err := h.bot.Send(msg); err != nil {
 		h.log.Error("failed to send main menu", "err", err)

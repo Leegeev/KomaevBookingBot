@@ -53,7 +53,7 @@ func (h *Handler) handleSchedule(ctx context.Context, msg *tgbotapi.Message) {
 
 		b.WriteString(tools.BuildBookingStr(bookings).String())
 
-		m := tgbotapi.NewMessage(msg.Chat.ID, tools.EscapeMarkdownV2(b.String()))
+		m := tgbotapi.NewMessage(msg.Chat.ID, b.String())
 		m.ParseMode = "MarkdownV2"
 
 		if _, err := h.bot.Send(m); err != nil {

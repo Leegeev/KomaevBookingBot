@@ -10,6 +10,7 @@ type BookingSession struct {
 	BookState int64
 	ChatID    int64
 	UserID    int64
+	UserName  string
 	MessageID int // сообщение, которое редактируем
 	RoomID    domain.RoomID
 	RoomName  string
