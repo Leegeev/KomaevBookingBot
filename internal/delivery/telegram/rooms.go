@@ -63,11 +63,10 @@ func (h *Handler) handleCreateRoomProcessing(ctx context.Context, msg *tgbotapi.
 
 	if err := h.uc.AdminCreateRoom(ctx, name); err != nil {
 		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
-		return
 	} else {
 		h.reply(msg.Chat.ID, tools.TextRoomCreated.String())
-		return
 	}
+	h.sessions.Delete(msg.From.ID)
 }
 
 func (h *Handler) handleDeactivateRoom(ctx context.Context, msg *tgbotapi.Message) {

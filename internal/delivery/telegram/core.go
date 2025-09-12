@@ -121,11 +121,23 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 		if handler, ok := h.commandHandlers[upd.Message.Text]; ok {
 			handler(ctx, upd.Message)
 			return
-		} else if ses := h.sessions.Get(upd.Message.From.ID); ses != nil && ses.BookState == tools.BookStateChoosingStartTime {
+		}
+		// else if ses := h.sessions.Get(upd.Message.From.ID); ses != nil && ses.BookState == tools.BookStateChoosingStartTime {
+		// 	h.handleBookTimepick(ctx, upd.Message)
+		// 	return
+		// }
+		sess := h.sessions.Get(upd.Message.From.ID)
+		if sess == nil {
+			h.reply(upd.Message.Chat.ID, "Необработанный ввод. Смотри /help")
+		}
+		switch {
+		case sess.BookState == tools.BookStateChoosingStartTime:
 			h.handleBookTimepick(ctx, upd.Message)
 			return
+		case sess.BookState == tools.StateProccessingRoomCreation:
+			h.handleCreateRoomProcessing(ctx, upd.Message)
+			return
 		}
-		h.reply(upd.Message.Chat.ID, "Необработанный ввод. Смотри /help")
 	}
 }
 
