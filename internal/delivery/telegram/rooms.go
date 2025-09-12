@@ -35,16 +35,39 @@ func (h *Handler) handleCreateRoom(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	name := strings.TrimSpace(msg.CommandArguments())
-	if name == "" {
-		h.reply(msg.Chat.ID, tools.TextRoomNameInput.String())
+	h.sessions.Set(&tools.BookingSession{
+		BookState: tools.StateProccessingRoomCreation,
+	})
+
+	h.reply(msg.Chat.ID, tools.TextRoomNameInput.String())
+}
+
+func (h *Handler) handleCreateRoomProcessing(ctx context.Context, msg *tgbotapi.Message) {
+	if err := ctx.Err(); err != nil {
+		h.log.Warn("Context canceled in handleCreateRoomProcessing handler",
+			"user", msg.From.UserName,
+			"chat_id", msg.Chat.ID,
+			"err", ctx.Err())
 		return
 	}
+
+	name := strings.TrimSpace(msg.Text)
+	if len([]rune(name)) < 2 {
+		h.reply(msg.Chat.ID, tools.TextRoomNameIsTooShort.String())
+		return // errors.New("название комнаты слишком короткое")
+	}
+	if len([]rune(name)) > 50 {
+		h.reply(msg.Chat.ID, tools.TextRoomNameIsTooLong.String())
+		return // errors.New("название комнаты слишком длинное")
+	}
+
 	if err := h.uc.AdminCreateRoom(ctx, name); err != nil {
 		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
 		return
+	} else {
+		h.reply(msg.Chat.ID, tools.TextRoomCreated.String())
+		return
 	}
-	h.reply(msg.Chat.ID, "Комната создана.")
 }
 
 func (h *Handler) handleDeactivateRoom(ctx context.Context, msg *tgbotapi.Message) {

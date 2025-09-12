@@ -23,6 +23,7 @@ type BookingSession struct {
 const (
 	StateIdle = iota
 	StateProcessingCommand
+	StateProccessingRoomCreation
 	BookStateChoosingRoom
 	BookStateChoosingDate
 	BookStateChoosingStartTime

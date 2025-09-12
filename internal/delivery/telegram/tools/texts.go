@@ -103,12 +103,15 @@ const (
 const (
 	TextRoomNameInput SafeText = `Введите название комнаты:
 (Сразу после ввода названия, она будет создана)`
+	TextRoomCreated SafeText = "✅ Комната успешно создана."
 	// TextRoomDeleteInput SafeText = `Введите ID комнаты для деактивации:
 	TextRoomDeleteConfirmation SafeText = `Вы уверены, что хотите деактивировать комнату *%s*?`
 	TextRoomDeactivated        SafeText = "✅ Комната успешно удалена"
-	TextRoomDeactivatedErr     SafeText = `❌ Не удалить комнату. 
+	TextRoomDeactivatedErr     SafeText = `❌ Не удалось удалить комнату. 
 	Тех. поддержка уже уведомлена.`
-	TextRoomConfirmCancel SafeText = "❌ Деактивация комнаты отменена."
+	TextRoomConfirmCancel  SafeText = "❌ Деактивация комнаты отменена."
+	TextRoomNameIsTooShort SafeText = "❌ Название комнаты слишком короткое. Минимум 2 символа."
+	TextRoomNameIsTooLong  SafeText = "❌ Название комнаты слишком длинное. Максимум 50 символов."
 )
 
 func BuildRoomDeleteConfirmationSrt(name string) SafeText {

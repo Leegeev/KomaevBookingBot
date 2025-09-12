@@ -178,10 +178,7 @@ func (s *BookingService) GetRoom(ctx context.Context, roomID int64) (domain.Room
 // }
 
 func (s *BookingService) AdminCreateRoom(ctx context.Context, name string) error {
-	if name == "" {
-		s.logger.Error("Room name is empty")
-		return domain.ErrInvalidInputData
-	}
+	// TODO: ниже какая то хуйня
 	room, err := s.roomRepo.GetByName(ctx, name)
 	if err != nil && err != domain.ErrRoomNotFound {
 		s.logger.Error("Failed to get room by name", "error", err)
