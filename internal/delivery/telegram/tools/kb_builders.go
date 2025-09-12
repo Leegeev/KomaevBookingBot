@@ -167,9 +167,10 @@ func BuildMyListKB(bks []domain.Booking, OfficeTZ *time.Location) tgbotapi.Inlin
 		start := bk.Range.Start
 		end := bk.Range.End
 
-		btnText := fmt.Sprintf("#%s — %s %02d:%02d–%02d:%02d",
-			bk.RoomName, start.Format("01-02"),
-			start.Hour(), start.Minute(), end.Hour(), end.Minute())
+		btnText := fmt.Sprintf("%s %02d:%02d–%02d:%02d - %s",
+			start.Format("01.02"),
+			start.Hour(), start.Minute(), end.Hour(), end.Minute(),
+			bk.RoomName)
 
 		data := fmt.Sprintf("my:list:%d", bk.ID)
 
