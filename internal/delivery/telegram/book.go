@@ -36,7 +36,7 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	rows := tools.BuildRoomListKB(rooms)
+	rows := tools.BuildRoomListKB(rooms, "book")
 
 	// CODE BELOW REMOVES DA KEYBOARD
 	emptyMsg := tgbotapi.NewMessage(msg.Chat.ID, "Скрываю клавиатуру...")
@@ -245,9 +245,6 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 
 	edit.ParseMode = "MarkdownV2"
 	if _, err := h.bot.Send(edit); err != nil {
-		// level=ERROR msg="Failed to edit message on duration"
-		// err="Bad Request: can't parse entities:
-		// Character '.' is reserved and must be escaped with the preceding '\\'"
 		h.log.Error("Failed to edit message on duration", "err", err)
 	}
 }
@@ -309,7 +306,12 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 		h.log.Error("Failed to edit message on confirmation", "err", err)
 	}
 	newMsg := tgbotapi.NewMessage(cq.Message.Chat.ID, text)
-	newMsg.ReplyMarkup = tools.BuildMainMenuKB(tools.Member)
+	role, err := h.getRole(cq.From.ID)
+	if err != nil {
+		h.log.Warn("Failed to get user role on user", "err", err, "user_id", cq.From.ID, "username", cq.From.UserName)
+		role = tools.Member
+	}
+	newMsg.ReplyMarkup = tools.BuildMainMenuKB(role)
 	newMsg.ParseMode = "MarkdownV2"
 	// newMsg.ReplyMarkup = tools.BuildDurationKB()
 
@@ -330,7 +332,12 @@ func (h *Handler) handleOverlapConfirm(cq *tgbotapi.CallbackQuery) {
 	// h.reply(cq.Message.Chat.ID, string(/)
 
 	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, tools.TextBookOverlapError.String())
-	msg.ReplyMarkup = tools.BuildMainMenuKB(tools.Member)
+	role, err := h.getRole(cq.From.ID)
+	if err != nil {
+		h.log.Warn("Failed to get user role on user", "err", err, "user_id", cq.From.ID, "username", cq.From.UserName)
+		role = tools.Member
+	}
+	msg.ReplyMarkup = tools.BuildMainMenuKB(role)
 	msg.ParseMode = "MarkdownV2"
 
 	if _, err := h.bot.Send(msg); err != nil {

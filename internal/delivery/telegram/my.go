@@ -64,7 +64,11 @@ func (h *Handler) handleMyBack(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 		h.log.Error("handleMyBack failed to hide inline KB", "err", err)
 	}
 
-	role, _ := h.getRole(ctx, cq.From.ID)
+	role, err := h.getRole(cq.From.ID)
+	if err != nil {
+		h.log.Warn("Failed to get user role on user", "err", err, "user_id", cq.From.ID, "username", cq.From.UserName)
+		role = tools.Member
+	}
 	replyKB := tools.BuildMainMenuKB(role)
 
 	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, "Главное меню:")

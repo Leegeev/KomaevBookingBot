@@ -25,7 +25,7 @@ import (
 type UserID = int64
 type BookingID = int64
 
-func (h *Handler) getRole(ctx context.Context, userID int64) (string, error) {
+func (h *Handler) getRole(userID int64) (string, error) {
 	if h.cfg.GroupChatID == 0 {
 		h.notifyAdmin("GroupChatID не установлен")
 		return "", fmt.Errorf("GroupChatID is not set in config")
@@ -36,11 +36,6 @@ func (h *Handler) getRole(ctx context.Context, userID int64) (string, error) {
 			ChatID: h.cfg.GroupChatID,
 			UserID: userID,
 		},
-	}
-
-	if err := ctx.Err(); err != nil {
-		h.log.Warn("Context canceled in GetRole", "user_id", userID, "err", err)
-		return "", err
 	}
 
 	m, err := h.bot.GetChatMember(cfg)
@@ -54,7 +49,7 @@ func (h *Handler) getRole(ctx context.Context, userID int64) (string, error) {
 
 func (h *Handler) checkSupported(ctx context.Context, upd tgbotapi.Update) error {
 	if upd.Message != nil {
-		role, _ := h.getRole(ctx, upd.Message.From.ID)
+		role, _ := h.getRole(upd.Message.From.ID)
 		supported := tools.CheckRoleIsSupported(role)
 		if !supported {
 			return fmt.Errorf("user is not supported")
@@ -63,7 +58,7 @@ func (h *Handler) checkSupported(ctx context.Context, upd tgbotapi.Update) error
 	}
 
 	if upd.CallbackQuery != nil {
-		role, _ := h.getRole(ctx, upd.CallbackQuery.From.ID)
+		role, _ := h.getRole(upd.CallbackQuery.From.ID)
 		supported := tools.CheckRoleIsSupported(role)
 		if !supported {
 			return fmt.Errorf("user is not supported")

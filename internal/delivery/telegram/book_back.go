@@ -30,7 +30,11 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 		h.log.Error("handleMyBack failed to hide inline KB", "err", err)
 	}
 
-	role, _ := h.getRole(ctx, cq.From.ID)
+	role, err := h.getRole(cq.From.ID)
+	if err != nil {
+		h.log.Warn("Failed to get user role on user", "err", err, "user_id", cq.From.ID, "username", cq.From.UserName)
+		role = tools.Member
+	}
 	replyKB := tools.BuildMainMenuKB(role)
 
 	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, "Главное меню:")
@@ -59,7 +63,7 @@ func (h *Handler) handleBookCalendarBack(ctx context.Context, cq *tgbotapi.Callb
 		return
 	}
 
-	rows := tools.BuildRoomListKB(rooms)
+	rows := tools.BuildRoomListKB(rooms, "book")
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,

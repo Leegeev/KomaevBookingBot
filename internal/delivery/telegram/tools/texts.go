@@ -104,7 +104,16 @@ const (
 	TextRoomNameInput SafeText = `Введите название комнаты:
 (Сразу после ввода названия, она будет создана)`
 	// TextRoomDeleteInput SafeText = `Введите ID комнаты для деактивации:
+	TextRoomDeleteConfirmation SafeText = `Вы уверены, что хотите деактивировать комнату *%s*?`
+	TextRoomDeactivated        SafeText = "✅ Комната успешно удалена"
+	TextRoomDeactivatedErr     SafeText = `❌ Не удалить комнату. 
+	Тех. поддержка уже уведомлена.`
+	TextRoomConfirmCancel SafeText = "❌ Деактивация комнаты отменена."
 )
+
+func BuildRoomDeleteConfirmationSrt(name string) SafeText {
+	return SafeText(fmt.Sprintf(string(TextRoomDeleteConfirmation), name))
+}
 
 func BuildBookingStr(bks []domain.Booking) SafeText {
 	var b strings.Builder

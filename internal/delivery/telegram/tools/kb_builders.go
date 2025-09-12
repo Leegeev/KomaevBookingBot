@@ -20,20 +20,21 @@ func BuildBackInlineKBButton(data string) tgbotapi.InlineKeyboardButton {
 
 // Step 0.
 // /book Строит инлайн клавиатуру с переговорками
-func BuildRoomListKB(rooms []domain.Room) [][]tgbotapi.InlineKeyboardButton {
+func BuildRoomListKB(rooms []domain.Room, route string) [][]tgbotapi.InlineKeyboardButton {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, len(rooms))
 	for _, room := range rooms {
 		if !room.IsActive {
 			continue
 		}
 		btnText := fmt.Sprintf("#%s", room.Name)
-		data := fmt.Sprintf("book:list:%d", room.ID)
+		data := fmt.Sprintf("%s:list:%d", route, room.ID)
 		btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
 	}
 
 	// Кнопка "Назад"
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("book:list_back")))
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton(
+		fmt.Sprintf("%s:list_back", route))))
 
 	return rows
 }
@@ -132,6 +133,24 @@ func BuildConfirmationKB() tgbotapi.InlineKeyboardMarkup {
 
 	rows = append(rows, row)
 	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("book:confirm_back")))
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+func BuildRoomDeleteKB(id int64) tgbotapi.InlineKeyboardMarkup {
+	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 2)
+	// Кнопка с
+	yesBtn := tgbotapi.NewInlineKeyboardButtonData(
+		"✅Удалить",
+		fmt.Sprintf("deactivate:confirm:%d", id),
+	)
+	noBtn := tgbotapi.NewInlineKeyboardButtonData(
+		"❌Отмена",
+		"deactivate:confirm_cancel",
+	)
+	row := tgbotapi.NewInlineKeyboardRow(yesBtn, noBtn)
+
+	rows = append(rows, row)
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("deactivate:confirm_back")))
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 

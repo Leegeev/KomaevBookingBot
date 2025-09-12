@@ -28,13 +28,13 @@ func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
 
 	msgText := tools.TextStartMessage.String()
 
-	role, err := h.getRole(ctx, msg.From.ID)
+	role, err := h.getRole(msg.From.ID)
 	if err != nil {
-		h.log.Error("Failed to get user role in start command", "user_id", msg.From.ID, "err", err)
-	} else {
-		if tools.CheckRoleIsAdmin(role) {
-			msgText += "\n\n" + tools.TextAdminStartMessage.String()
-		}
+		h.log.Warn("Failed to get user role on user", "err", err, "user_id", msg.From.ID, "username", msg.From.UserName)
+		role = tools.Member
+	}
+	if tools.CheckRoleIsAdmin(role) {
+		msgText += "\n\n" + tools.TextAdminStartMessage.String()
 	}
 
 	msgOut := tgbotapi.NewMessage(msg.Chat.ID, msgText)
@@ -66,13 +66,13 @@ func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
 
 	msgText := tools.TextHelpMessage.String()
 
-	role, err := h.getRole(ctx, msg.From.ID)
+	role, err := h.getRole(msg.From.ID)
 	if err != nil {
-		h.log.Error("Failed to get user role in help command", "user_id", msg.From.ID, "err", err)
-	} else {
-		if tools.CheckRoleIsAdmin(role) {
-			msgText += "\n\n" + tools.TextAdminHelpMessage.String()
-		}
+		h.log.Warn("Failed to get user role on user", "err", err, "user_id", msg.From.ID, "username", msg.From.UserName)
+		role = tools.Member
+	}
+	if tools.CheckRoleIsAdmin(role) {
+		msgText += "\n\n" + tools.TextAdminHelpMessage.String()
 	}
 
 	msgOut := tgbotapi.NewMessage(msg.Chat.ID, msgText)

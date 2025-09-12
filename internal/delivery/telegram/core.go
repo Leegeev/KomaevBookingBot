@@ -187,5 +187,12 @@ func (h *Handler) registerRoutes() {
 		h.answerCB(cq, "")
 	}
 
+	// ROOMS
+	h.callbackHandlers["deactivate_room:list"] = h.handleDeactivateList
+	h.callbackHandlers["deactivate_room:list_back"] = h.handleDeactivateListBack
+	h.callbackHandlers["deactivate:confirm"] = h.handleDeactivateConfirm
+	h.callbackHandlers["deactivate:confirm_cancel"] = h.handleConfirmCancel
+	h.callbackHandlers["deactivate:confirm_back"] = h.handleDeactivateConfirmBack
+
 	// h.callbackHandlers["my:reschedule"] = h.handleMyReschedule
 }
