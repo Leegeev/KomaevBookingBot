@@ -66,14 +66,14 @@ func BuildCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
 		day := startOfWeek.AddDate(0, 0, i)
 
 		// День недели (некликабельный)
-		row2 = append(row2, tgbotapi.NewInlineKeyboardButtonData(daysOfWeek[i], "noop"))
+		row2 = append(row2, tgbotapi.NewInlineKeyboardButtonData(daysOfWeek[i], "no:op"))
 
 		// Дата
 		var row3display, callback string
 		if shift == 0 && day.Before(now.Truncate(24*time.Hour)) {
 			// прошедшие дни этой недели блокируем
 			row3display = "❌"
-			callback = "noop"
+			callback = ""
 		} else {
 			row3display = day.Format("02.01")
 			callback = fmt.Sprintf("book:calendar:%s", day.Format("2006-01-02"))
@@ -145,8 +145,8 @@ func formatDurationButtonText(d float64) string {
 func BuildMyListKB(bks []domain.Booking, OfficeTZ *time.Location) tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, len(bks))
 	for _, bk := range bks {
-		start := bk.Range.Start.In(OfficeTZ)
-		end := bk.Range.End.In(OfficeTZ)
+		start := bk.Range.Start
+		end := bk.Range.End
 
 		btnText := fmt.Sprintf("#%s — %s %02d:%02d–%02d:%02d",
 			bk.RoomName, start.Format("01-02"),

@@ -253,8 +253,6 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 }
 
 func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-	defer h.sessions.Delete(cq.From.ID)
-
 	h.answerCB(cq, "")
 
 	parts := strings.Split(cq.Data, ":")
@@ -262,6 +260,17 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 
 	session := h.sessions.Get(cq.From.ID)
 	session.MessageID = cq.Message.MessageID
+	session.StartTime = time.Date(
+		session.Date.Year(),
+		session.Date.Month(),
+		session.Date.Day(),
+		session.StartTime.Hour(),
+		session.StartTime.Minute(),
+		0, 0,
+		h.cfg.OfficeTZ,
+	)
+	session.EndTime = session.StartTime.Add(session.Duration)
+
 	sess := usecase.CreateBookingCmd{
 		RoomID:   session.RoomID,
 		RoomName: session.RoomName,
@@ -274,6 +283,7 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 	text := ""
 
 	if confirm == 1 {
+		defer h.sessions.Delete(cq.From.ID)
 		err := h.uc.CreateBooking(ctx, sess)
 		if err != nil && errors.Is(err, domain.ErrOverlapsExisting) {
 			h.handleOverlapConfirm(cq)

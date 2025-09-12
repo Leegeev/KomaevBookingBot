@@ -86,7 +86,6 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 			"user_id", upd.Message.From.ID,
 			"chat_id", upd.Message.Chat.ID,
 			"command", upd.Message.Command(),
-			"args", upd.Message.CommandArguments(),
 		)
 		cmd := upd.Message.Command()
 		if handler, ok := h.commandHandlers[cmd]; ok {
