@@ -74,7 +74,7 @@ func BuildCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
 		if shift == 0 && day.Before(now.Truncate(24*time.Hour)) {
 			// прошедшие дни этой недели блокируем
 			row3display = "❌"
-			callback = ""
+			callback = "no:op"
 		} else {
 			row3display = day.Format("02.01")
 			callback = fmt.Sprintf("book:calendar:%s", day.Format("2006-01-02"))
@@ -156,9 +156,9 @@ func BuildRoomDeleteKB(id int64) tgbotapi.InlineKeyboardMarkup {
 
 func formatDurationButtonText(d float64) string {
 	if d == float64(int64(d)) {
-		return fmt.Sprintf("%.0f", d)
+		return fmt.Sprintf("%.0fч", d)
 	}
-	return fmt.Sprintf("%.1f", d)
+	return fmt.Sprintf("%.1fч", d)
 }
 
 func BuildMyListKB(bks []domain.Booking, OfficeTZ *time.Location) tgbotapi.InlineKeyboardMarkup {
@@ -202,6 +202,7 @@ func BuildMainMenuKB(role string) tgbotapi.ReplyKeyboardMarkup {
 	)
 	row2 := tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(TextMainScheduleButton),
+		tgbotapi.NewKeyboardButton(TextMainHelpButton),
 	)
 
 	rows := [][]tgbotapi.KeyboardButton{row1, row2}

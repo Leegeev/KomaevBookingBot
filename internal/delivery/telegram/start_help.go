@@ -21,11 +21,6 @@ func (h *Handler) handleStart(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	h.log.Info("Received /start command",
-		"user", msg.From.UserName,
-		"user_id", msg.From.ID,
-		"chat_id", msg.Chat.ID)
-
 	msgText := tools.TextStartMessage.String()
 
 	role, err := h.getRole(msg.From.ID)
@@ -58,11 +53,6 @@ func (h *Handler) handleHelp(ctx context.Context, msg *tgbotapi.Message) {
 			"err", err)
 		return
 	}
-
-	h.log.Info("Received /help command",
-		"user", msg.From.UserName,
-		"user_id", msg.From.ID,
-		"chat_id", msg.Chat.ID)
 
 	msgText := tools.TextHelpMessage.String()
 

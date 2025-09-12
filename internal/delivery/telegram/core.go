@@ -122,20 +122,20 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 			handler(ctx, upd.Message)
 			return
 		}
-		// else if ses := h.sessions.Get(upd.Message.From.ID); ses != nil && ses.BookState == tools.BookStateChoosingStartTime {
-		// 	h.handleBookTimepick(ctx, upd.Message)
-		// 	return
-		// }
+
 		sess := h.sessions.Get(upd.Message.From.ID)
-		if sess == nil {
-			h.reply(upd.Message.Chat.ID, "Необработанный ввод. Смотри /help")
-		}
 		switch {
+		case sess == nil:
+			h.reply(upd.Message.Chat.ID, "Сессия не найдена. Смотри /help")
+			return
 		case sess.BookState == tools.BookStateChoosingStartTime:
 			h.handleBookTimepick(ctx, upd.Message)
 			return
 		case sess.BookState == tools.StateProccessingRoomCreation:
 			h.handleCreateRoomProcessing(ctx, upd.Message)
+			return
+		default:
+			h.reply(upd.Message.Chat.ID, "Необработанный ввод. Смотри /help")
 			return
 		}
 	}
@@ -173,6 +173,7 @@ func (h *Handler) registerRoutes() {
 	h.commandHandlers[tools.TextMainScheduleButton] = h.handleSchedule
 	h.commandHandlers[tools.TextMainCreateRoomButton] = h.handleCreateRoom
 	h.commandHandlers[tools.TextMainDeleteRoomButton] = h.handleDeactivateRoom
+	h.commandHandlers[tools.TextMainHelpButton] = h.handleHelp
 
 	// callbacks
 	// BOOK

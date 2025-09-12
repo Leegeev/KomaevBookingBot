@@ -65,8 +65,8 @@ func (h *Handler) checkSupported(ctx context.Context, upd tgbotapi.Update) error
 		}
 		return nil
 	}
-	h.log.Error("необработанный update", "upd", upd)
-	return fmt.Errorf("неизвестный тип update, обратитесь в поддержку")
+	// h.log.Error("Данный update", "upd", upd)
+	return fmt.Errorf("Данный update не поддерживается")
 }
 
 func (h *Handler) notifyAdmin(msg string) {
@@ -76,5 +76,31 @@ func (h *Handler) notifyAdmin(msg string) {
 
 	if _, err := h.bot.Send(adminMsg); err != nil {
 		h.log.Error("Failed to notify admin", "err", err)
+	}
+}
+
+func (h *Handler) answerWarning(warning string, cq *tgbotapi.CallbackQuery) {
+	edit := tgbotapi.NewEditMessageReplyMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		tools.BuildBlankInlineKB(),
+	)
+
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Warn("Failed to edit message on confirmation", "err", err)
+	}
+
+	role, err := h.getRole(cq.From.ID)
+	if err != nil {
+		h.log.Warn("Failed to get user role on user", "err", err, "user_id", cq.From.ID, "username", cq.From.UserName)
+		role = tools.Member
+	}
+
+	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, warning)
+	msg.ReplyMarkup = tools.BuildMainMenuKB(role)
+	msg.ParseMode = "MarkdownV2"
+
+	if _, err := h.bot.Send(msg); err != nil {
+		h.log.Error("failed to send main menu", "err", err)
 	}
 }

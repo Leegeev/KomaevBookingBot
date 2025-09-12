@@ -26,20 +26,28 @@ func (h *Handler) handleCreateRoom(ctx context.Context, msg *tgbotapi.Message) {
 
 	role, err := h.getRole(msg.From.ID)
 	if err != nil {
-		h.log.Warn("Failed to get user role on user", "err", err, "user_id", msg.From.ID, "username", msg.From.UserName)
-		role = tools.Member
-	}
-
-	if !tools.CheckRoleIsAdmin(role) {
+		h.log.Error("Failed to get user role in deactivate room command", "user_id", msg.From.ID, "err", err)
+		h.reply(msg.Chat.ID, "Ошибка при получении вашей роли")
+		return
+	} else if !tools.CheckRoleIsAdmin(role) {
 		h.reply(msg.Chat.ID, "Недостаточно прав.")
 		return
 	}
 
 	h.sessions.Set(&tools.BookingSession{
 		BookState: tools.StateProccessingRoomCreation,
+		UserID:    msg.From.ID,
+		UserName:  msg.From.UserName,
+		ChatID:    msg.Chat.ID,
 	})
 
-	h.reply(msg.Chat.ID, tools.TextRoomNameInput.String())
+	newMsg := tgbotapi.NewMessage(msg.Chat.ID, tools.TextRoomNameInput.String())
+	newMsg.ParseMode = "MarkdownV2"
+
+	if _, err := h.bot.Send(newMsg); err != nil {
+		h.log.Error("Failed to send a new message on tihandleCreateRoommepick", "err", err)
+		return
+	}
 }
 
 func (h *Handler) handleCreateRoomProcessing(ctx context.Context, msg *tgbotapi.Message) {
@@ -53,18 +61,18 @@ func (h *Handler) handleCreateRoomProcessing(ctx context.Context, msg *tgbotapi.
 
 	name := strings.TrimSpace(msg.Text)
 	if len([]rune(name)) < 2 {
-		h.reply(msg.Chat.ID, tools.TextRoomNameIsTooShort.String())
+		h.reply(msg.Chat.ID, string(tools.TextRoomNameIsTooShort))
 		return // errors.New("название комнаты слишком короткое")
 	}
 	if len([]rune(name)) > 50 {
-		h.reply(msg.Chat.ID, tools.TextRoomNameIsTooLong.String())
+		h.reply(msg.Chat.ID, string(tools.TextRoomNameIsTooLong))
 		return // errors.New("название комнаты слишком длинное")
 	}
 
 	if err := h.uc.AdminCreateRoom(ctx, name); err != nil {
 		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
 	} else {
-		h.reply(msg.Chat.ID, tools.TextRoomCreated.String())
+		h.reply(msg.Chat.ID, string(tools.TextRoomCreated))
 	}
 	h.sessions.Delete(msg.From.ID)
 }
@@ -90,12 +98,12 @@ func (h *Handler) handleDeactivateRoom(ctx context.Context, msg *tgbotapi.Messag
 
 	rooms, err := h.uc.ListRooms(ctx)
 	if errors.Is(err, domain.ErrNoRoomsAvailable) {
-		h.reply(msg.From.ID, tools.TextBookNoRoomsAvailable.String())
+		h.reply(msg.From.ID, string(tools.TextBookNoRoomsAvailable))
 		return
 	} else if err != nil {
 		h.log.Error("Failed to list rooms", "user_id", msg.From.ID, "error", err)
 		h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при /book:* `%s`", err.Error()))
-		h.reply(msg.From.ID, tools.TextBookNoRoomsErr.String())
+		h.reply(msg.From.ID, string(tools.TextBookNoRoomsErr))
 		return
 	}
 
@@ -214,12 +222,12 @@ func (h *Handler) handleDeactivateConfirmBack(ctx context.Context, cq *tgbotapi.
 
 	rooms, err := h.uc.ListRooms(ctx)
 	if errors.Is(err, domain.ErrNoRoomsAvailable) {
-		h.reply(cq.Message.From.ID, tools.TextBookNoRoomsAvailable.String())
+		h.reply(cq.Message.From.ID, string(tools.TextBookNoRoomsAvailable))
 		return
 	} else if err != nil {
 		h.log.Error("Failed to list rooms", "user_id", cq.Message.From.ID, "error", err)
 		h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при /book:* `%s`", err.Error()))
-		h.reply(cq.Message.From.ID, tools.TextBookNoRoomsErr.String())
+		h.reply(cq.Message.From.ID, string(tools.TextBookNoRoomsErr))
 		return
 	}
 

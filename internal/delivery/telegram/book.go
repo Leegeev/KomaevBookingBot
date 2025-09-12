@@ -232,7 +232,6 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 	}
 
 	session.Duration = time.Duration(durF * float64(time.Hour))
-	session.EndTime = session.StartTime.Add(session.Duration)
 	session.BookState = tools.BookStateConfirmingBooking
 	session.MessageID = cq.Message.MessageID
 
@@ -268,7 +267,7 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 	)
 	session.EndTime = session.StartTime.Add(session.Duration)
 
-	sess := usecase.CreateBookingCmd{
+	cmd := usecase.CreateBookingCmd{
 		RoomID:   session.RoomID,
 		RoomName: session.RoomName,
 		UserID:   domain.UserID(session.UserID),
@@ -277,25 +276,6 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 		End:      session.EndTime,
 	}
 
-	text := ""
-
-	if confirm == 1 {
-		defer h.sessions.Delete(cq.From.ID)
-		err := h.uc.CreateBooking(ctx, sess)
-		if err != nil && errors.Is(err, domain.ErrOverlapsExisting) {
-			h.handleOverlapConfirm(cq)
-			return
-		} else if err != nil {
-			h.log.Error("Failed to create booking", "err", err)
-			h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при создании брони:* `%s`", err.Error()))
-			h.reply(cq.Message.Chat.ID, "Ошибка при создании брони: "+err.Error())
-			return
-		}
-		text = tools.TextBookYes.String()
-	} else {
-		text = tools.TextBookNo.String()
-	}
-
 	edit := tgbotapi.NewEditMessageReplyMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
@@ -305,42 +285,46 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 	if _, err := h.bot.Send(edit); err != nil {
 		h.log.Error("Failed to edit message on confirmation", "err", err)
 	}
-	newMsg := tgbotapi.NewMessage(cq.Message.Chat.ID, text)
+
+	var replyText string
+
+	if confirm == 1 {
+		// Проверка на прошедшее время
+		if cmd.End.Before(time.Now()) {
+			h.answerWarning(tools.TextBookTooLateWaring.String(), cq)
+			return
+		}
+
+		if err := h.uc.CreateBooking(ctx, cmd); err != nil {
+			// Пересечение бронирований
+			if errors.Is(err, domain.ErrOverlapsExisting) {
+				h.answerWarning(tools.TextBookOverlapWarning.String(), cq)
+				return
+			}
+			// Неизвестная ошибка
+			h.log.Error("failed to create booking", "err", err)
+			h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при создании брони:* `%s`", err.Error()))
+			h.answerWarning(tools.TextBookServerError.String(), cq)
+			return
+		}
+		// Ошибок нет - бронь создана
+		replyText = tools.TextBookYes.String()
+	} else {
+		replyText = tools.TextBookNo.String()
+	}
+	h.sessions.Delete(cq.From.ID)
+
 	role, err := h.getRole(cq.From.ID)
 	if err != nil {
 		h.log.Warn("Failed to get user role on user", "err", err, "user_id", cq.From.ID, "username", cq.From.UserName)
 		role = tools.Member
 	}
+
+	newMsg := tgbotapi.NewMessage(cq.Message.Chat.ID, replyText)
 	newMsg.ReplyMarkup = tools.BuildMainMenuKB(role)
 	newMsg.ParseMode = "MarkdownV2"
-	// newMsg.ReplyMarkup = tools.BuildDurationKB()
 
 	if _, err := h.bot.Send(newMsg); err != nil {
 		h.log.Error("Failed to send a new message on confirmation", "err", err)
-	}
-}
-
-func (h *Handler) handleOverlapConfirm(cq *tgbotapi.CallbackQuery) {
-	edit := tgbotapi.NewEditMessageReplyMarkup(
-		cq.Message.Chat.ID,
-		cq.Message.MessageID,
-		tools.BuildBlankInlineKB(),
-	)
-	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on confirmation", "err", err)
-	}
-	// h.reply(cq.Message.Chat.ID, string(/)
-
-	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, tools.TextBookOverlapError.String())
-	role, err := h.getRole(cq.From.ID)
-	if err != nil {
-		h.log.Warn("Failed to get user role on user", "err", err, "user_id", cq.From.ID, "username", cq.From.UserName)
-		role = tools.Member
-	}
-	msg.ReplyMarkup = tools.BuildMainMenuKB(role)
-	msg.ParseMode = "MarkdownV2"
-
-	if _, err := h.bot.Send(msg); err != nil {
-		h.log.Error("failed to send main menu", "err", err)
 	}
 }
