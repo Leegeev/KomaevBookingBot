@@ -178,32 +178,28 @@ func (s *BookingService) GetRoom(ctx context.Context, roomID int64) (domain.Room
 // }
 
 func (s *BookingService) AdminCreateRoom(ctx context.Context, name string) error {
-	// TODO: ниже какая то хуйня
 	room, err := s.roomRepo.GetByName(ctx, name)
-	if err != nil && err != domain.ErrRoomNotFound {
+	switch {
+	case err == domain.ErrRoomNotFound:
+		s.logger.Info("Creating new room", "name", name)
+		return s.roomRepo.Create(ctx, domain.Room{Name: name})
+
+	case err != nil:
 		s.logger.Error("Failed to get room by name", "error", err)
 		return err
 	}
-	if err == domain.ErrRoomNotFound {
-		s.logger.Info("Room not found, creating new room", "name", name)
-		s.roomRepo.Create(ctx, domain.Room{Name: name})
-		return nil
-	}
-	if room.Name == name && room.IsActive {
-		s.logger.Warn("Room already exists", "name", name)
+
+	// room найден
+	if room.IsActive {
+		s.logger.Info("Room already exists", "name", name)
 		return domain.ErrRoomAlreadyExists
 	}
-	if room.Name == name && !room.IsActive {
-		s.logger.Info("Reactivating existing room", "name", name)
-		s.roomRepo.Activate(ctx, room.ID)
-		return nil
-	}
-	s.logger.Info("Room created successfully", "name", name)
-	return nil
+
+	s.logger.Info("Reactivating existing room", "name", name)
+	return s.roomRepo.Activate(ctx, room.ID)
 }
 
 func (s *BookingService) AdminDeleteRoom(ctx context.Context, roomID int64) error {
-	s.logger.Info("Deleting room", "roomID", roomID)
 	if roomID <= 0 {
 		s.logger.Error("Invalid room ID", "roomID", roomID)
 		return domain.ErrInvalidInputData

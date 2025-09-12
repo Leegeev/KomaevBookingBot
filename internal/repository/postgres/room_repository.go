@@ -26,15 +26,13 @@ type roomRow struct {
 	IsActive bool   `db:"is_active"`
 }
 
-func (r *roomRepositoryPG) Create(ctx context.Context, room domain.Room) (domain.RoomID, error) {
+func (r *roomRepositoryPG) Create(ctx context.Context, room domain.Room) error {
 	r.log.Debug("Creating room", "name", room.Name)
 	var newID int64
 	if err := r.db.QueryRowxContext(ctx, qInsertRoom, room.Name, true).Scan(&newID); err != nil {
-		// тут можно дополнительно замапить уникальное имя на доменную ошибку, если нужно
-		// (код PG: 23505). Иначе — отдать как есть.
-		return 0, fmt.Errorf("failed to create room: %w", err)
+		return fmt.Errorf("failed to create room: %w", err)
 	}
-	return domain.RoomID(newID), nil
+	return nil
 }
 
 func (r *roomRepositoryPG) Deactivate(ctx context.Context, id domain.RoomID) error {

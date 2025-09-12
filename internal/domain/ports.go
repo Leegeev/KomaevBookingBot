@@ -9,7 +9,7 @@ import (
 
 // Репозиторий переговорок.
 type RoomRepository interface {
-	Create(ctx context.Context, r Room) (RoomID, error)
+	Create(ctx context.Context, r Room) error
 	Deactivate(ctx context.Context, id RoomID) error
 	Activate(ctx context.Context, id RoomID) error
 	List(ctx context.Context) ([]Room, error)
