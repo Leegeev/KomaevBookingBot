@@ -126,14 +126,14 @@ func (s *BookingService) ListUserBookings(ctx context.Context, userID int64) ([]
 	return bookings, nil
 }
 
-func (s *BookingService) ListRoomBookings(ctx context.Context, roomID int64) ([]domain.Booking, error) {
+func (s *BookingService) ListRoomBookings(ctx context.Context, roomID int64, end time.Time) ([]domain.Booking, error) {
 	s.logger.Info("Listing bookings for room", "roomID", roomID)
 	if roomID <= 0 {
 		s.logger.Error("Invalid room ID", "roomID", roomID)
 		return nil, domain.ErrInvalidInputData
 	}
 	now := time.Now().UTC()
-	bookings, err := s.bookingRepo.ListByRoomAndInterval(ctx, domain.RoomID(roomID), now, now.Add(time.Hour*24*7))
+	bookings, err := s.bookingRepo.ListByRoomAndInterval(ctx, domain.RoomID(roomID), now, end)
 	if err != nil {
 		s.logger.Error("Failed to list room bookings", "error", err)
 		return nil, err

@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	// "time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
+	"github.com/leegeev/KomaevBookingBot/internal/delivery/notifier"
 	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram/tools"
 	"github.com/leegeev/KomaevBookingBot/internal/usecase"
 	"github.com/leegeev/KomaevBookingBot/pkg/config"
@@ -24,6 +26,9 @@ type Handler struct {
 	sessions *tools.SessionsStore // userID -> сессия бронирования
 	// roleCache map[UserID]string    // userID -> роль (user/admin)
 
+	messageID int64
+	msgMu     sync.Mutex
+
 	commandHandlers  map[string]func(ctx context.Context, msg *tgbotapi.Message)
 	callbackHandlers map[string]func(ctx context.Context, cq *tgbotapi.CallbackQuery)
 }
@@ -35,6 +40,8 @@ func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc
 		log:              log,
 		uc:               uc,
 		sessions:         tools.NewSessionStore(),
+		messageID:        0,
+		msgMu:            sync.Mutex{},
 		commandHandlers:  make(map[string]func(ctx context.Context, msg *tgbotapi.Message)),
 		callbackHandlers: make(map[string]func(ctx context.Context, cq *tgbotapi.CallbackQuery)),
 	}
@@ -50,7 +57,14 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 	updateConfig := tgbotapi.NewUpdate(0)
 	updateConfig.Timeout = 30
 	h.registerRoutes()
-	// updateConfig.AllowedUpdates = []string{"message", "callback_query"}
+	updateConfig.AllowedUpdates = []string{"message", "callback_query"}
+
+	n := notifier.New(h.log)
+	err := n.AddJob(ctx, tools.NotifierConfig, h.DailySchedule)
+	if err != nil {
+		h.log.Error("failed to add job", "err", err)
+	}
+	n.Start(ctx)
 
 	updates := h.bot.GetUpdatesChan(updateConfig)
 	defer h.bot.StopReceivingUpdates()

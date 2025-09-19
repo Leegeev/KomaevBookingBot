@@ -66,9 +66,13 @@ func main() {
 		logger.Info("Telegram bot stopped")
 		return nil
 	})
-	if err := g.Wait(); err != nil {
-		logger.Error("Service stopped with error", "error", err)
-	}
+
+	g.Go(func() error {
+		<-ctx.Done()
+		logger.Info("shutting down...")
+		bot.StopReceivingUpdates()
+		return nil
+	})
 
 	logger.Info("Service exited cleanly")
 	_ = time.Second // (иногда полезно дать логам долететь; обычно не нужно)

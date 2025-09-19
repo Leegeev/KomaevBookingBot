@@ -7,6 +7,13 @@ import (
 	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
 
+// NOTIFIER
+const (
+	// NotifierConfig     = "0 0 9 * * *"
+	NotifierConfig = "0 */5 * * * *" // TEST
+	NotifierString = "☀️ Доброе утро! Проверьте расписание переговорок на сегодня."
+)
+
 // тексты кнопок
 const (
 	TextBackInlineKBButton = "🔙 Назад"
@@ -98,6 +105,7 @@ const (
 const (
 	TextScheduleIntroduction SafeText = "📅 *Расписание на неделю:*"
 	TextScheduleBooking      SafeText = `⁃%s %s:%s-%s:%s  👤 @%s`
+	TextScheduleError        SafeText = "Ошибка при получении расписания, тех. поддержка уже уведомлена."
 	// - мм.дд 16:30-17:30 @leegeev
 
 )

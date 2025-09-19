@@ -113,17 +113,6 @@ func (h *Handler) handleMyList(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 	}
 }
 
-// func (h *Handler) handleMyReschedule(ctx context.Context, cq *tgbotapi.CallbackQuery) {
-// 	h.answerCB(cq, "")
-// 	h.log.Info("handleMyReschedule", "data", cq.Data, "user", cq.From.UserName)
-
-// 	parts := strings.Split(cq.Data, ":")
-// 	id, _ := strconv.ParseInt(parts[2], 10, 64) // id of the picked booking.
-// 	// delete current booking
-// 	// start booking new flow
-
-// }
-
 func (h *Handler) handleMyCancel(ctx context.Context, cq *tgbotapi.CallbackQuery) {
 	h.answerCB(cq, "")
 	h.log.Info("handleMyCancel", "data", cq.Data, "user", cq.From.UserName)
@@ -149,6 +138,8 @@ func (h *Handler) handleMyCancel(ctx context.Context, cq *tgbotapi.CallbackQuery
 		h.reply(cq.From.ID, tools.TextMyBookingCancelErr.String())
 		return
 	}
+
+	go h.wake()
 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(
 		cq.Message.Chat.ID,

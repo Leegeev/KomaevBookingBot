@@ -309,6 +309,7 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 		}
 		// Ошибок нет - бронь создана
 		replyText = tools.TextBookYes.String()
+		go h.wake()
 	} else {
 		replyText = tools.TextBookNo.String()
 	}
