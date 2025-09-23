@@ -9,8 +9,8 @@ import (
 
 // NOTIFIER
 const (
-	// NotifierConfig     = "0 0 9 * * *"
-	NotifierConfig = "0 */5 * * * *" // TEST
+	NotifierConfig = "0 0 9 * * *"
+	// NotifierConfig = "0 */2 * * * *" // TEST
 	NotifierString = "☀️ Доброе утро! Проверьте расписание переговорок на сегодня."
 )
 

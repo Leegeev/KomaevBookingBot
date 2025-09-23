@@ -44,6 +44,7 @@ func (n *Notifier) AddJob(ctx context.Context, spec string, postSchedule func())
 		n.log.Error("failed to add cron job", "err", err)
 		return fmt.Errorf("failed to add cron job: %w", err)
 	}
+	postSchedule()
 	return nil
 }
 

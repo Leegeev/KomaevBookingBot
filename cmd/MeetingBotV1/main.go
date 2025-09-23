@@ -3,7 +3,6 @@ package main
 import (
 	"os/signal"
 	"syscall"
-	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram"
@@ -54,7 +53,11 @@ func main() {
 	service := usecase.NewBookingService(roomRepo, bookingRepo, logger)
 
 	// TG BOT
-	bot, _ := tgbotapi.NewBotAPI(config.Telegram.Token)
+	bot, err := tgbotapi.NewBotAPI(config.Telegram.Token)
+	if err != nil {
+		logger.Error("Failed to init Telegram bot", "error", err)
+		return
+	}
 	h := telegram.NewHandler(bot, config.Telegram, logger, service)
 	g, ctx := errgroup.WithContext(ctx)
 
@@ -74,8 +77,10 @@ func main() {
 		return nil
 	})
 
+	if err := g.Wait(); err != nil {
+		logger.Error("Service stopped with error", "error", err)
+	}
 	logger.Info("Service exited cleanly")
-	_ = time.Second // (иногда полезно дать логам долететь; обычно не нужно)
 }
 
 func setupGracefulShutdown(cancelFunc context.CancelFunc, logger logger.Logger) {

@@ -84,7 +84,11 @@ func (h *Handler) buildTodaySchedule() string {
 	startOfDay := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, h.cfg.OfficeTZ)
 	endOfDay := startOfDay.Add(24 * time.Hour)
 
-	b.WriteString(fmt.Sprintf("📅 *Расписание на %s:*\n\n", today.Format("02.01.2006")))
+	b.WriteString(
+		tools.EscapeMarkdownV2(
+			fmt.Sprintf("📅 *Расписание на %s:*\n\n", today.Format("02.01.2006")),
+		),
+	)
 
 	for _, room := range rooms {
 		bookings, err := h.uc.ListRoomBookings(ctx, int64(room.ID), endOfDay)
@@ -94,13 +98,14 @@ func (h *Handler) buildTodaySchedule() string {
 		}
 
 		if len(bookings) == 0 {
-			b.WriteString(fmt.Sprintf("*%s*\n_Свободна весь день_\n\n", room.Name))
+			b.WriteString(fmt.Sprintf("*%s*\n_Свободна весь день_\n\n",
+				tools.EscapeMarkdownV2(room.Name),
+			))
 			continue
 		}
 
-		b.WriteString(fmt.Sprintf("*%s*\n", room.Name))
 		b.WriteString(tools.BuildBookingStr(bookings).String())
-		b.WriteString("\n")
+		b.WriteString(tools.EscapeMarkdownV2("\n"))
 	}
 	return b.String()
 }
@@ -113,12 +118,15 @@ func (h *Handler) DailySchedule() {
 
 	sent, err := h.bot.Send(msg)
 	if err != nil {
-		h.log.Error("failed to send main menu", "err", err)
+		h.log.Error("failed to send DailySchedule", "err", err)
 	}
 	h.messageID = int64(sent.MessageID)
 }
 
 func (h *Handler) wake() {
+	if h.messageID == 0 {
+		return
+	}
 	h.msgMu.Lock()
 	defer h.msgMu.Unlock()
 	edit := tgbotapi.NewEditMessageText(
@@ -135,6 +143,6 @@ func (h *Handler) wake() {
 
 	// h.messageID = int64(sent.MessageID)
 	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("handleMyBack failed to hide inline KB", "err", err)
+		h.log.Error("failed to wake", "err", err)
 	}
 }
