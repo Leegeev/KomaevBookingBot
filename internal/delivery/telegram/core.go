@@ -96,6 +96,10 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 	}
 
 	if upd.Message != nil && upd.Message.IsCommand() {
+		if upd.Message.Chat.Type != "private" && upd.Message.Command() != "register" {
+			h.reply(upd.Message.Chat.ID, "Пожалуйста, делайте бронирования в личном диалоге со мной")
+			return
+		}
 		h.log.Info("Received command",
 			"user", upd.Message.From.UserName,
 			"user_id", upd.Message.From.ID,
