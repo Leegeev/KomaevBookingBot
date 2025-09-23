@@ -29,6 +29,7 @@ type Telegram struct {
 	OfficeTZString string `mapstructure:"office_tz"`
 	GroupChatID    int64  `mapstructure:"group_chat_id"` // ID группы для проверки админства
 	AdminID        int64  `mapstructure:"admin_id"`      // ID админа для уведомлений
+	NotifierConfig string `mapstructure:"notifier_config"`
 }
 
 type Config struct {

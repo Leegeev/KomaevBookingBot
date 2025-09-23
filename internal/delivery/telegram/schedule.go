@@ -86,7 +86,7 @@ func (h *Handler) buildTodaySchedule() string {
 
 	b.WriteString(
 		tools.EscapeMarkdownV2(
-			fmt.Sprintf("📅 *Расписание на %s:*\n\n", today.Format("02.01.2006")),
+			fmt.Sprintf(tools.NotifierString, today.Format("02.01.2006")),
 		),
 	)
 

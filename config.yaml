@@ -14,3 +14,4 @@ telegram:
   group_chat_id: ""
   admin_id: ""
   notifier_config: "0 0 9 * * *"
+  # notifier_config: "0 */2 * * * *"

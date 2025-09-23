@@ -60,7 +60,7 @@ func (h *Handler) RunPolling(ctx context.Context) error {
 	updateConfig.AllowedUpdates = []string{"message", "callback_query"}
 
 	n := notifier.New(h.log)
-	err := n.AddJob(ctx, tools.NotifierConfig, h.DailySchedule)
+	err := n.AddJob(ctx, h.cfg.NotifierConfig, h.DailySchedule)
 	if err != nil {
 		h.log.Error("failed to add job", "err", err)
 	}
