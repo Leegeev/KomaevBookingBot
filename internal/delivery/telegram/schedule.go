@@ -21,6 +21,12 @@ func (h *Handler) handleSchedule(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
+	// role, err := h.getRole(msg.From.ID)
+	// if tools.CheckRoleIsAdmin(role) {
+
+	// 	return
+	// }
+
 	rooms, err := h.uc.ListRooms(ctx)
 	if errors.Is(err, domain.ErrNoRoomsAvailable) {
 		h.reply(msg.From.ID, tools.TextBookNoRoomsAvailable.String())
