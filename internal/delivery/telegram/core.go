@@ -19,12 +19,12 @@ import (
 
 // Основной хэндлер
 type Handler struct {
-	bot      *tgbotapi.BotAPI
-	cfg      config.Telegram
-	log      logger.Logger
-	uc       *usecase.BookingService
-	sessions *tools.SessionsStore // userID -> сессия бронирования
-	// roleCache map[UserID]string    // userID -> роль (user/admin)
+	bot       *tgbotapi.BotAPI
+	cfg       config.Telegram
+	log       logger.Logger
+	uc        *usecase.BookingService
+	sessions  *tools.SessionsStore // userID -> сессия бронирования
+	roleCache *RoleCache           // userID -> роль (user/admin)
 
 	messageID int64
 	msgMu     sync.Mutex
@@ -40,6 +40,7 @@ func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc
 		log:              log,
 		uc:               uc,
 		sessions:         tools.NewSessionStore(),
+		roleCache:        NewRoleCache(cfg.RoleCacheTTL),
 		messageID:        0,
 		msgMu:            sync.Mutex{},
 		commandHandlers:  make(map[string]func(ctx context.Context, msg *tgbotapi.Message)),

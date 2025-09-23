@@ -3,24 +3,56 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/leegeev/KomaevBookingBot/internal/delivery/telegram/tools"
 )
 
-/*
+type roleEntry struct {
+	role      string
+	expiresAt time.Time
+}
 
-	CreateBooking(ctx context.Context, cmd bookingSession) error
-	CancelBooking(ctx context.Context, bookingID int64) error
-	CheckBookingAndUserID(ctx context.Context, bookingID, userID int64) (bool, error)
-	ListUserBookings(ctx context.Context, userID int64) ([]domain.Booking, error)
-	ListRoomBookings(ctx context.Context, roomID int64) ([]domain.Booking, error)
-	ListRooms(ctx context.Context) ([]domain.Room, error)
-	GetRoom(ctx context.Context, roomID int64) (domain.Room, error)
-	AdminCreateRoom(ctx context.Context, name string) error
-	AdminDeleteRoom(ctx context.Context, roomID int64) error
+type RoleCache struct {
+	mu   sync.RWMutex
+	data map[UserID]roleEntry
+	ttl  time.Duration
+}
 
-*/
+func NewRoleCache(ttl time.Duration) *RoleCache {
+	c := &RoleCache{
+		data: make(map[UserID]roleEntry),
+		ttl:  ttl,
+	}
+	return c
+}
+
+func (c *RoleCache) Get(id UserID) (string, bool) {
+	c.mu.RLock()
+	e, ok := c.data[id]
+	c.mu.RUnlock()
+	if !ok {
+		return "", false
+	}
+
+	// проверяем срок жизни
+	if time.Now().After(e.expiresAt) {
+		// истёк – удаляем
+		c.mu.Lock()
+		delete(c.data, id)
+		c.mu.Unlock()
+		return "", false
+	}
+	return e.role, true
+}
+
+func (c *RoleCache) Set(id UserID, role string) {
+	c.mu.Lock()
+	c.data[id] = roleEntry{role: role, expiresAt: time.Now().Add(c.ttl)}
+	c.mu.Unlock()
+}
 
 type UserID = int64
 type BookingID = int64
@@ -31,6 +63,12 @@ func (h *Handler) getRole(userID int64) (string, error) {
 		return "", fmt.Errorf("GroupChatID is not set in config")
 	}
 
+	// --- сначала пробуем из кеша ---
+	if role, ok := h.roleCache.Get(UserID(userID)); ok {
+		return role, nil
+	}
+
+	// --- если в кеше нет или TTL истёк, идём в Telegram API ---
 	cfg := tgbotapi.GetChatMemberConfig{
 		ChatConfigWithUser: tgbotapi.ChatConfigWithUser{
 			ChatID: h.cfg.GroupChatID,
@@ -44,29 +82,32 @@ func (h *Handler) getRole(userID int64) (string, error) {
 		return "", err
 	}
 
+	// сохраняем в кеш с TTL из конфигурации
+	h.roleCache.Set(UserID(userID), m.Status)
+
 	return m.Status, nil
 }
 
 func (h *Handler) checkSupported(ctx context.Context, upd tgbotapi.Update) error {
-	if upd.Message != nil {
-		role, _ := h.getRole(upd.Message.From.ID)
-		supported := tools.CheckRoleIsSupported(role)
-		if !supported {
-			return fmt.Errorf("user is not supported")
-		}
-		return nil
+	var uid int64
+	switch {
+	case upd.Message != nil:
+		uid = upd.Message.From.ID
+	case upd.CallbackQuery != nil:
+		uid = upd.CallbackQuery.From.ID
+	default:
+		return fmt.Errorf("данный update не поддерживается")
 	}
 
-	if upd.CallbackQuery != nil {
-		role, _ := h.getRole(upd.CallbackQuery.From.ID)
-		supported := tools.CheckRoleIsSupported(role)
-		if !supported {
-			return fmt.Errorf("user is not supported")
-		}
-		return nil
+	role, err := h.getRole(uid)
+	if err != nil {
+		return err
 	}
-	// h.log.Error("Данный update", "upd", upd)
-	return fmt.Errorf("данный update не поддерживается")
+
+	if !tools.CheckRoleIsSupported(role) {
+		return fmt.Errorf("user is not supported")
+	}
+	return nil
 }
 
 func (h *Handler) notifyAdmin(msg string) {
