@@ -143,7 +143,7 @@ func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQ
 		return
 	}
 
-	session.Date = date // LOCAL TIMEZONE
+	session.Date = date
 	session.BookState = tools.BookStateChoosingStartTime
 
 	edit := tgbotapi.NewEditMessageTextAndMarkup(

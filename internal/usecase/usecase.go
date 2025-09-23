@@ -5,14 +5,16 @@ import (
 	"time"
 
 	"github.com/leegeev/KomaevBookingBot/internal/domain"
+	"github.com/leegeev/KomaevBookingBot/pkg/config"
 	"github.com/leegeev/KomaevBookingBot/pkg/logger"
 )
 
-func NewBookingService(roomRepo domain.RoomRepository, bookingRepo domain.BookingRepository, logger logger.Logger) *BookingService {
+func NewBookingService(roomRepo domain.RoomRepository, bookingRepo domain.BookingRepository, logger logger.Logger, cfg config.Telegram) *BookingService {
 	return &BookingService{
 		roomRepo:    roomRepo,
 		bookingRepo: bookingRepo,
 		logger:      logger,
+		cfg:         cfg,
 	}
 }
 
@@ -20,6 +22,7 @@ type BookingService struct {
 	roomRepo    domain.RoomRepository
 	bookingRepo domain.BookingRepository
 	logger      logger.Logger
+	cfg         config.Telegram
 }
 
 type CreateBookingCmd struct {
@@ -93,7 +96,7 @@ func (s *BookingService) GetById(ctx context.Context, bookingID int64) (domain.B
 		s.logger.Error("Failed to get booking", "error", err)
 		return domain.Booking{}, err
 	}
-	return booking, nil
+	return s.toLocal(booking), nil
 }
 
 func (s *BookingService) CheckBookingAndUserID(ctx context.Context, bookingID, userID int64) (bool, error) {
@@ -123,7 +126,7 @@ func (s *BookingService) ListUserBookings(ctx context.Context, userID int64) ([]
 		return nil, err
 	}
 	s.logger.Info("Found bookings for user", "userID", userID, "count", len(bookings))
-	return bookings, nil
+	return s.toLocalSlice(bookings), nil
 }
 
 func (s *BookingService) ListRoomBookings(ctx context.Context, roomID int64, end time.Time) ([]domain.Booking, error) {
@@ -139,7 +142,7 @@ func (s *BookingService) ListRoomBookings(ctx context.Context, roomID int64, end
 		return nil, err
 	}
 	s.logger.Info("Found bookings for room", "roomID", roomID, "count", len(bookings))
-	return bookings, nil
+	return s.toLocalSlice(bookings), nil
 }
 
 func (s *BookingService) ListRooms(ctx context.Context) ([]domain.Room, error) {
@@ -215,3 +218,16 @@ func (s *BookingService) AdminDeleteRoom(ctx context.Context, roomID int64) erro
 // func (s *BookingService) FreeSlots(ctx context.Context, roomID domain.RoomID, day time.Time, step time.Duration) ([]domain.TimeRange, error)
 
 // getChatMember). Если status ∈ {creator, administrator, member} — добавляем/обновляем в users_whitelist
+
+func (s *BookingService) toLocal(b domain.Booking) domain.Booking {
+	b.Range.Start = b.Range.Start.In(s.cfg.OfficeTZ)
+	b.Range.End = b.Range.End.In(s.cfg.OfficeTZ)
+	return b
+}
+
+func (s *BookingService) toLocalSlice(list []domain.Booking) []domain.Booking {
+	for i := range list {
+		list[i] = s.toLocal(list[i])
+	}
+	return list
+}

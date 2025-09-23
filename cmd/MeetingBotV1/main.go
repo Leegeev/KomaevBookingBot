@@ -50,7 +50,7 @@ func main() {
 	bookingRepo := repository.NewBookingRepositoryPG(db, logger)
 
 	// Инициализация сервиса
-	service := usecase.NewBookingService(roomRepo, bookingRepo, logger)
+	service := usecase.NewBookingService(roomRepo, bookingRepo, logger, config.Telegram)
 
 	// TG BOT
 	bot, err := tgbotapi.NewBotAPI(config.Telegram.Token)

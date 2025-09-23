@@ -66,7 +66,7 @@ func (h *Handler) checkSupported(ctx context.Context, upd tgbotapi.Update) error
 		return nil
 	}
 	// h.log.Error("Данный update", "upd", upd)
-	return fmt.Errorf("Данный update не поддерживается")
+	return fmt.Errorf("данный update не поддерживается")
 }
 
 func (h *Handler) notifyAdmin(msg string) {
