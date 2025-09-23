@@ -3,6 +3,7 @@ package notifier
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/leegeev/KomaevBookingBot/pkg/logger"
 	"github.com/robfig/cron/v3"
@@ -29,8 +30,16 @@ type Notifier struct {
 	cron *cron.Cron
 }
 
-func New(log logger.Logger) *Notifier {
-	c := cron.New(cron.WithSeconds()) // с поддержкой секунд (по желанию)
+func New(log logger.Logger, loc *time.Location) *Notifier {
+	// если loc == nil — берём системную зону по умолчанию
+	if loc == nil {
+		loc = time.Local
+	}
+
+	c := cron.New(
+		cron.WithLocation(loc), // нужная тайм-зона
+	)
+
 	return &Notifier{
 		log:  log,
 		cron: c,

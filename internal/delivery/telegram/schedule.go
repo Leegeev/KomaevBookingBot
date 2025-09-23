@@ -78,7 +78,7 @@ func (h *Handler) buildTodaySchedule() string {
 
 	rooms, err := h.uc.ListRooms(ctx)
 	if err != nil {
-		h.log.Error("failed to list rooms for schedule", "err", err)
+		h.log.Error("failed to list rooms for buildTodaySchedule", "err", err)
 		h.notifyAdmin("error in BuildTodaySchedule when listing rooms: " + err.Error())
 		return "Не удалось получить список переговорок"
 	}

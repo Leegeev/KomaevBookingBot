@@ -309,7 +309,14 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 		}
 		// Ошибок нет - бронь создана
 		replyText = tools.TextBookYes.String()
-		go h.wake()
+
+		now := time.Now().In(cmd.Start.Location())
+		sy, sm, sd := cmd.Start.Date()
+		ny, nm, nd := now.Date()
+		if sy == ny && sm == nm && sd == nd {
+			go h.wake()
+		}
+
 	} else {
 		replyText = tools.TextBookNo.String()
 	}
