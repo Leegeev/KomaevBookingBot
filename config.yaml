@@ -10,10 +10,9 @@ database:
 
 telegram:
   token: ""
-  office_tz: "Europe/Moscow" # time.LoadLocation
+  office_tz: "Europe/Moscow"
   group_chat_id: ""
   admin_id: ""
   notifier_config: "0 9 * * *"
   role_cache_ttl: 30m
-  # notifier_config: "44 13 * * *"
-  # notifier_config: "*/2 * * * *"
+
