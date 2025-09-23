@@ -18,8 +18,6 @@ import (
 	"os"
 )
 
-// front нужно сделать
-
 func main() {
 	// Initialize logger
 	logger := logger.SetupLogger()

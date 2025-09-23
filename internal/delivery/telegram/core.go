@@ -180,6 +180,7 @@ func (h *Handler) registerRoutes() {
 	h.commandHandlers["schedule"] = h.handleSchedule
 	h.commandHandlers["create_room"] = h.handleCreateRoom
 	h.commandHandlers["deactivate_room"] = h.handleDeactivateRoom
+	h.commandHandlers["register"] = h.handleRegisterFromAdmin
 
 	// Text commands
 	h.commandHandlers[tools.TextMainBookButton] = h.handleBook
