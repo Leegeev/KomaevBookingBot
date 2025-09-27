@@ -90,6 +90,11 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 		}
 	}()
 
+	if upd.Message != nil && upd.Message.IsCommand() && upd.Message.Command() == "register" {
+		h.handleRegisterFromAdmin(ctx, upd.Message)
+		return
+	}
+
 	if err := h.checkSupported(ctx, upd); err != nil {
 		h.reply(upd.FromChat().ChatConfig().ChatID, err.Error())
 		return

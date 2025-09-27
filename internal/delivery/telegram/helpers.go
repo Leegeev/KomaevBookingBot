@@ -59,8 +59,9 @@ type BookingID = int64
 
 func (h *Handler) getRole(userID int64) (string, error) {
 	if h.cfg.GroupChatID == 0 {
-		h.notifyAdmin("GroupChatID не установлен")
-		return "", fmt.Errorf("GroupChatID is not set in config")
+		h.notifyAdmin("GroupChatID is not set in config")
+		return "", fmt.Errorf("внутренняя ошибка. тех поддержка уведомлена")
+
 	}
 
 	// --- сначала пробуем из кеша ---

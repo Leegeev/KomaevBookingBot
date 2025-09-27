@@ -9,7 +9,7 @@ import (
 
 func (h *Handler) handleRegisterFromAdmin(ctx context.Context, msg *tgbotapi.Message) {
 	if err := ctx.Err(); err != nil {
-		h.log.Warn("Context canceled in handleDeactivateRoom handler",
+		h.log.Warn("Context canceled in handleRegisterFromAdmin handler",
 			"user", msg.From.UserName,
 			"chat_id", msg.Chat.ID,
 			"err", ctx.Err())
@@ -19,12 +19,12 @@ func (h *Handler) handleRegisterFromAdmin(ctx context.Context, msg *tgbotapi.Mes
 	if msg.From.ID != h.cfg.AdminID {
 		m = tgbotapi.NewMessage(msg.Chat.ID, tools.TextRegistrationUnauthorized.String())
 	} else {
-		h.cfg.GroupChatID = msg.From.ID
+		h.cfg.GroupChatID = msg.Chat.ID
 		m = tgbotapi.NewMessage(msg.Chat.ID, tools.TextRegistrationSuccess.String())
+		h.DailySchedule()
 	}
 
 	m.ParseMode = "MarkdownV2"
-
 	if _, err := h.bot.Send(m); err != nil {
 		h.log.Error("Failed to send registration confirmation", "err", err)
 	}

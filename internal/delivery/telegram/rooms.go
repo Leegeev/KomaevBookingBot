@@ -73,6 +73,7 @@ func (h *Handler) handleCreateRoomProcessing(ctx context.Context, msg *tgbotapi.
 		h.reply(msg.Chat.ID, "Ошибка: "+err.Error())
 	} else {
 		h.reply(msg.Chat.ID, string(tools.TextRoomCreated))
+		go h.wake()
 	}
 	h.sessions.Delete(msg.From.ID)
 }
@@ -163,6 +164,7 @@ func (h *Handler) handleDeactivateConfirm(ctx context.Context, cq *tgbotapi.Call
 			tools.TextRoomDeactivated.String(),
 			tools.BuildBlankInlineKB(),
 		)
+		go h.wake()
 	}
 
 	edit.ParseMode = "MarkdownV2"
