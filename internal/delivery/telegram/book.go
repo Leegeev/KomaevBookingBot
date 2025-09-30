@@ -71,12 +71,21 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 		return
 	}
 
+	userName := cq.From.UserName
+	if userName == "" {
+		if cq.From.LastName != "" {
+			userName = cq.From.FirstName + " " + cq.From.LastName
+		} else {
+			userName = cq.From.FirstName
+		}
+	}
+
 	// Создаем bookingSession и сохраняем в in-memory storage
 	h.sessions.Set(&tools.BookingSession{
 		BookState: tools.BookStateChoosingDate,
 		ChatID:    cq.Message.Chat.ID,
 		UserID:    cq.From.ID,
-		UserName:  cq.From.UserName,
+		UserName:  userName,
 		MessageID: cq.Message.MessageID,
 		RoomID:    room.ID,
 		RoomName:  room.Name,
