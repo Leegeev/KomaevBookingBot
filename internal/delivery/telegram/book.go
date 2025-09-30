@@ -71,8 +71,8 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 		return
 	}
 
-	userName := cq.From.UserName
-	if userName == "" {
+	userName := "@" + cq.From.UserName
+	if userName == "@" {
 		if cq.From.LastName != "" {
 			userName = cq.From.FirstName + " " + cq.From.LastName
 		} else {

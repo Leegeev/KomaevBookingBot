@@ -107,7 +107,7 @@ const (
 // тексты /schedule
 const (
 	TextScheduleIntroduction SafeText = "📅 *Расписание на неделю:*"
-	TextScheduleBooking      SafeText = `⁃%s %s:%s-%s:%s  👤 @%s`
+	TextScheduleBooking      SafeText = `⁃%s %s:%s-%s:%s  👤 %s`
 	TextScheduleError        SafeText = "Ошибка при получении расписания, тех. поддержка уже уведомлена."
 	// - мм.дд 16:30-17:30 @leegeev
 
