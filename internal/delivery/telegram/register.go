@@ -19,9 +19,7 @@ func (h *Handler) handleRegisterFromAdmin(ctx context.Context, msg *tgbotapi.Mes
 	if msg.From.ID != h.cfg.AdminID {
 		m = tgbotapi.NewMessage(msg.Chat.ID, tools.TextRegistrationUnauthorized.String())
 	} else {
-		h.cfg.GroupChatID = msg.Chat.ID
-		m = tgbotapi.NewMessage(msg.Chat.ID, tools.TextRegistrationSuccess.String())
-		h.DailySchedule()
+		return
 	}
 
 	m.ParseMode = "MarkdownV2"
