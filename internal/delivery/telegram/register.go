@@ -15,8 +15,9 @@ func (h *Handler) handleRegisterFromAdmin(ctx context.Context, msg *tgbotapi.Mes
 			"err", ctx.Err())
 		return
 	}
-	h.log.Info("Registering group", "chatID", msg.Chat.ID, "username", msg.From.UserName)
+
 	if msg.From.ID == h.cfg.AdminID {
+		h.log.Error("Registering group", "chatID", msg.Chat.ID)
 		h.cfg.GroupChatID = msg.Chat.ID
 		h.DailySchedule()
 	}

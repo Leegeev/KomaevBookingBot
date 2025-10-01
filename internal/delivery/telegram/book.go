@@ -71,13 +71,17 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 		return
 	}
 
-	userName := "@" + cq.From.UserName
-	if userName == "@" {
-		if cq.From.LastName != "" {
-			userName = cq.From.FirstName + " " + cq.From.LastName
-		} else {
-			userName = cq.From.FirstName
-		}
+	var userName string
+	switch {
+	case cq.From.UserName != "":
+		// Есть никнейм → используем его
+		userName = "@" + cq.From.UserName
+	case cq.From.LastName != "":
+		// Нет ника, но есть имя + фамилия
+		userName = cq.From.FirstName + " " + cq.From.LastName
+	default:
+		// Остался минимум: только имя
+		userName = cq.From.FirstName
 	}
 
 	// Создаем bookingSession и сохраняем в in-memory storage
