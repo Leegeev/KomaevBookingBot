@@ -35,7 +35,7 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 	}
 	replyKB := tools.BuildMainMenuKB(role)
 
-	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, "Главное меню:")
+	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, tools.TextMainMenu.String())
 	msg.ReplyMarkup = replyKB
 	msg.ParseMode = "MarkdownV2"
 	go func() {

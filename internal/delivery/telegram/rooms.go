@@ -209,7 +209,7 @@ func (h *Handler) handleDeactivateListBack(ctx context.Context, cq *tgbotapi.Cal
 	}
 	replyKB := tools.BuildMainMenuKB(role)
 
-	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, "Главное меню:")
+	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, tools.TextMainMenu.String())
 	msg.ReplyMarkup = replyKB
 	msg.ParseMode = "MarkdownV2"
 

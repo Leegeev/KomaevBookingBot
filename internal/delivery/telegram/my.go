@@ -72,7 +72,7 @@ func (h *Handler) handleMyBack(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 	}
 	replyKB := tools.BuildMainMenuKB(role)
 
-	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, "Главное меню:")
+	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, tools.TextMainMenu.String())
 	msg.ReplyMarkup = replyKB
 	go func() {
 		if _, err := h.bot.Send(msg); err != nil {
