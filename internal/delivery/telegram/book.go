@@ -50,10 +50,11 @@ func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 	m := tgbotapi.NewMessage(msg.Chat.ID, tools.TextBookIntroduction.String())
 	m.ParseMode = "MarkdownV2"
 	m.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(rows...)
-
-	if _, err := h.bot.Send(m); err != nil {
-		h.log.Error("Failed to handle /book on rooms list", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Send(m); err != nil {
+			h.log.Error("Failed to handle /book on rooms list", "err", err)
+		}
+	}()
 }
 
 // Step 0.
@@ -102,11 +103,12 @@ func (h *Handler) handleBookList(ctx context.Context, cq *tgbotapi.CallbackQuery
 		tools.TextBookCalendar.String(),
 		tools.BuildCalendarKB(0),
 	)
-
-	edit.ParseMode = "MarkdownV2"
-	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on book list", "err", err)
-	}
+	go func() {
+		edit.ParseMode = "MarkdownV2"
+		if _, err := h.bot.Send(edit); err != nil {
+			h.log.Error("Failed to edit message on book list", "err", err)
+		}
+	}()
 }
 
 // Step 0.+-1
@@ -128,10 +130,11 @@ func (h *Handler) handleBookCalendarNavigation(ctx context.Context, cq *tgbotapi
 		cq.Message.MessageID,
 		tools.BuildCalendarKB(shift),
 	)
-
-	if _, err := h.bot.Request(editMarkup); err != nil {
-		h.log.Error("failed to edit calendar inline keyboard", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Request(editMarkup); err != nil {
+			h.log.Error("failed to edit calendar inline keyboard", "err", err)
+		}
+	}()
 }
 
 // Step 1.
@@ -170,9 +173,11 @@ func (h *Handler) handleBookCalendar(ctx context.Context, cq *tgbotapi.CallbackQ
 	)
 
 	edit.ParseMode = "MarkdownV2"
-	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on calendar", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Send(edit); err != nil {
+			h.log.Error("Failed to edit message on calendar", "err", err)
+		}
+	}()
 }
 
 // Step 2.
@@ -212,16 +217,17 @@ func (h *Handler) handleBookTimepick(ctx context.Context, msg *tgbotapi.Message)
 	newMsg := tgbotapi.NewMessage(msg.Chat.ID, tools.TextBookAskDuration.String())
 	newMsg.ParseMode = "MarkdownV2"
 	newMsg.ReplyMarkup = tools.BuildDurationKB()
-
-	sentMsg, err := h.bot.Send(newMsg)
-	if err != nil {
-		h.log.Error("Failed to send a new message on timepick", "err", err)
-		return
-	}
-	// обновляем messageID в сессии
-	// чтобы при НАЗАД можно было его отредактировать
-	// (иначе будет редактироваться первое сообщение, а не текущее)
-	session.MessageID = sentMsg.MessageID
+	go func() {
+		sentMsg, err := h.bot.Send(newMsg)
+		if err != nil {
+			h.log.Error("Failed to send a new message on timepick", "err", err)
+			return
+		}
+		// обновляем messageID в сессии
+		// чтобы при НАЗАД можно было его отредактировать
+		// (иначе будет редактироваться первое сообщение, а не текущее)
+		session.MessageID = sentMsg.MessageID
+	}()
 }
 
 func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQuery) {
@@ -254,11 +260,12 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 		tools.BuildConfirmationStr(session).String(),
 		tools.BuildConfirmationKB(),
 	)
-
 	edit.ParseMode = "MarkdownV2"
-	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on duration", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Send(edit); err != nil {
+			h.log.Error("Failed to edit message on duration", "err", err)
+		}
+	}()
 }
 
 func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQuery) {
@@ -344,8 +351,9 @@ func (h *Handler) handleBookConfirm(ctx context.Context, cq *tgbotapi.CallbackQu
 	newMsg := tgbotapi.NewMessage(cq.Message.Chat.ID, replyText)
 	newMsg.ReplyMarkup = tools.BuildMainMenuKB(role)
 	newMsg.ParseMode = "MarkdownV2"
-
-	if _, err := h.bot.Send(newMsg); err != nil {
-		h.log.Error("Failed to send a new message on confirmation", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Send(newMsg); err != nil {
+			h.log.Error("Failed to send a new message on confirmation", "err", err)
+		}
+	}()
 }

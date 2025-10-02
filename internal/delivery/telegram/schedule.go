@@ -45,10 +45,11 @@ func (h *Handler) handleSchedule(ctx context.Context, msg *tgbotapi.Message) {
 		}
 		m := tgbotapi.NewMessage(msg.Chat.ID, schedule)
 		m.ParseMode = "MarkdownV2"
-
-		if _, err := h.bot.Send(m); err != nil {
-			h.log.Error("Failed to handle /book on rooms list", "err", err)
-		}
+		go func() {
+			if _, err := h.bot.Send(m); err != nil {
+				h.log.Error("Failed to handle /book on rooms list", "err", err)
+			}
+		}()
 	}
 }
 

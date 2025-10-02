@@ -42,10 +42,11 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 	m.ParseMode = "MarkdownV2"
 	m.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	m.ReplyMarkup = tools.BuildMyListKB(bookings, h.cfg.OfficeTZ)
-
-	if _, err := h.bot.Send(m); err != nil {
-		h.log.Error("Failed to send /my list", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Send(m); err != nil {
+			h.log.Error("Failed to send /my list", "err", err)
+		}
+	}()
 }
 
 func (h *Handler) handleMyBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
@@ -73,10 +74,11 @@ func (h *Handler) handleMyBack(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 
 	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, "Главное меню:")
 	msg.ReplyMarkup = replyKB
-
-	if _, err := h.bot.Send(msg); err != nil {
-		h.log.Error("failed to send main menu", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Send(msg); err != nil {
+			h.log.Error("failed to send main menu", "err", err)
+		}
+	}()
 }
 
 func (h *Handler) handleMyList(ctx context.Context, cq *tgbotapi.CallbackQuery) {
@@ -108,9 +110,11 @@ func (h *Handler) handleMyList(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 	)
 
 	edit.ParseMode = "MarkdownV2"
-	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on book list", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Send(edit); err != nil {
+			h.log.Error("Failed to edit message on book list", "err", err)
+		}
+	}()
 }
 
 func (h *Handler) handleMyCancel(ctx context.Context, cq *tgbotapi.CallbackQuery) {
@@ -149,9 +153,11 @@ func (h *Handler) handleMyCancel(ctx context.Context, cq *tgbotapi.CallbackQuery
 	)
 
 	edit.ParseMode = "MarkdownV2"
-	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on book list", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Send(edit); err != nil {
+			h.log.Error("Failed to edit message on book list", "err", err)
+		}
+	}()
 }
 
 func (h *Handler) handleMyListBack(ctx context.Context, cq *tgbotapi.CallbackQuery) {
@@ -180,8 +186,9 @@ func (h *Handler) handleMyListBack(ctx context.Context, cq *tgbotapi.CallbackQue
 		kb,
 	)
 	edit.ParseMode = "MarkdownV2"
-
-	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on calendar back", "err", err)
-	}
+	go func() {
+		if _, err := h.bot.Send(edit); err != nil {
+			h.log.Error("Failed to edit message on calendar back", "err", err)
+		}
+	}()
 }
