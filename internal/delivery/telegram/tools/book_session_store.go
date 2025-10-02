@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"sync"
 	"time"
 
 	"github.com/leegeev/KomaevBookingBot/internal/domain"
@@ -32,31 +33,24 @@ const (
 )
 
 type SessionsStore struct {
-	data map[int64]*BookingSession
+	data sync.Map // key: int64, value: *BookingSession
 }
 
 func NewSessionStore() *SessionsStore {
-	return &SessionsStore{
-		data: make(map[int64]*BookingSession),
-	}
+	return &SessionsStore{}
 }
 
 func (s *SessionsStore) Get(userID int64) *BookingSession {
-	if s, ok := s.data[userID]; ok {
-		return s
+	if val, ok := s.data.Load(userID); ok {
+		return val.(*BookingSession)
 	}
-	// newSession := &BookingSession{
-	// 	UserID: userID,
-	// }
-	// s.data[userID] = newSession
-	// return newSession
 	return nil
 }
 
 func (s *SessionsStore) Set(session *BookingSession) {
-	s.data[session.UserID] = session
+	s.data.Store(session.UserID, session)
 }
 
 func (s *SessionsStore) Delete(userID int64) {
-	delete(s.data, userID)
+	s.data.Delete(userID)
 }
