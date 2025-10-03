@@ -37,9 +37,9 @@ func (h *Handler) handleSchedule(ctx context.Context, msg *tgbotapi.Message) {
 		h.reply(msg.From.ID, tools.TextBookNoRoomsErr.String())
 		return
 	}
-
+	now := time.Now()
 	for _, room := range rooms {
-		schedule := h.scheduleBuilder(ctx, room, time.Now().Add(time.Hour*24*7))
+		schedule := h.scheduleBuilder(ctx, room, now, now.Add(time.Hour*24*7))
 		if schedule == "" {
 			h.reply(msg.Chat.ID, tools.TextScheduleError.String())
 		}
@@ -53,11 +53,11 @@ func (h *Handler) handleSchedule(ctx context.Context, msg *tgbotapi.Message) {
 	}
 }
 
-func (h *Handler) scheduleBuilder(ctx context.Context, room domain.Room, end time.Time) string {
+func (h *Handler) scheduleBuilder(ctx context.Context, room domain.Room, start, end time.Time) string {
 	var b strings.Builder
 	b.WriteString(tools.TextScheduleIntroduction.String() + "\n\n")
 
-	bookings, err := h.uc.ListRoomBookings(ctx, int64(room.ID), end)
+	bookings, err := h.uc.ListRoomBookings(ctx, int64(room.ID), start, end)
 	if err != nil {
 		h.notifyAdmin(fmt.Sprintf("❗ *Ошибка при /schedule:* `%s`", err.Error()))
 		h.log.Error("Failed to list room bookings", "err", err)
@@ -68,7 +68,7 @@ func (h *Handler) scheduleBuilder(ctx context.Context, room domain.Room, end tim
 		b.WriteString(fmt.Sprintf("*%s*\n_Нет бронирований на ближайшую неделю_\n", room.Name))
 	}
 
-	b.WriteString(tools.BuildBookingStr(bookings).String())
+	b.WriteString(tools.BuildWeekBookingStr(bookings).String())
 	return b.String()
 }
 
@@ -98,7 +98,7 @@ func (h *Handler) buildTodaySchedule() string {
 	)
 
 	for _, room := range rooms {
-		bookings, err := h.uc.ListRoomBookings(ctx, int64(room.ID), endOfDay)
+		bookings, err := h.uc.ListRoomBookings(ctx, int64(room.ID), startOfDay, endOfDay)
 		if err != nil {
 			h.log.Error("failed to get bookings", "room", room.Name, "err", err)
 			continue
@@ -111,7 +111,7 @@ func (h *Handler) buildTodaySchedule() string {
 			continue
 		}
 
-		b.WriteString(tools.BuildBookingStr(bookings).String())
+		b.WriteString(tools.BuildTodayBookingStr(bookings).String())
 		b.WriteString(tools.EscapeMarkdownV2("\n"))
 	}
 	return b.String()

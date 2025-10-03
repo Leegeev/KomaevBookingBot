@@ -106,8 +106,9 @@ const (
 
 // тексты /schedule
 const (
-	TextScheduleIntroduction SafeText = "📅 *Расписание на неделю:*"
-	TextScheduleBooking      SafeText = `⁃%s %s:%s-%s:%s  👤 %s`
+	TextScheduleIntroduction SafeText = "📅 *Расписание на будущую неделю:*"
+	TextWeekScheduleBooking  SafeText = `⁃%s %s:%s-%s:%s  👤 %s`
+	TextTodayScheduleBooking SafeText = `⁃%s:%s-%s:%s  👤 %s`
 	TextScheduleError        SafeText = "Ошибка при получении расписания, тех. поддержка уже уведомлена."
 	// - мм.дд 16:30-17:30 @leegeev
 
@@ -132,14 +133,31 @@ func BuildRoomDeleteConfirmationSrt(name string) SafeText {
 	return SafeText(fmt.Sprintf(string(TextRoomDeleteConfirmation), name))
 }
 
-func BuildBookingStr(bks []domain.Booking) SafeText {
+func BuildWeekBookingStr(bks []domain.Booking) SafeText {
 	var b strings.Builder
 	for i, bk := range bks {
 		if i == 0 {
 			b.WriteString(fmt.Sprintf("*%s*\n", bk.RoomName))
 		}
-		b.WriteString(fmt.Sprintf(string(TextScheduleBooking)+"\n",
+		b.WriteString(fmt.Sprintf(string(TextWeekScheduleBooking)+"\n",
 			bk.Range.Start.Format("02.01"),
+			bk.Range.Start.Format("15"),
+			bk.Range.Start.Format("04"),
+			bk.Range.End.Format("15"),
+			bk.Range.End.Format("04"),
+			bk.UserName,
+		))
+	}
+	return SafeText(b.String())
+}
+
+func BuildTodayBookingStr(bks []domain.Booking) SafeText {
+	var b strings.Builder
+	for i, bk := range bks {
+		if i == 0 {
+			b.WriteString(fmt.Sprintf("*%s*\n", bk.RoomName))
+		}
+		b.WriteString(fmt.Sprintf(string(TextTodayScheduleBooking)+"\n",
 			bk.Range.Start.Format("15"),
 			bk.Range.Start.Format("04"),
 			bk.Range.End.Format("15"),
