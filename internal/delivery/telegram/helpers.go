@@ -90,17 +90,17 @@ func (h *Handler) getRole(userID int64) (string, error) {
 }
 
 func (h *Handler) checkSupported(ctx context.Context, upd tgbotapi.Update) error {
-	var uid int64
+	var userID int64
 	switch {
 	case upd.Message != nil:
-		uid = upd.Message.From.ID
+		userID = upd.Message.From.ID
 	case upd.CallbackQuery != nil:
-		uid = upd.CallbackQuery.From.ID
+		userID = upd.CallbackQuery.From.ID
 	default:
 		return fmt.Errorf("данный update не поддерживается")
 	}
 
-	role, err := h.getRole(uid)
+	role, err := h.getRole(userID)
 	if err != nil {
 		return err
 	}

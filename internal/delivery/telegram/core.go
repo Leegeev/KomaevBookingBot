@@ -100,11 +100,11 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 		return
 	}
 
+	if upd.Message.Chat.Type != "private" {
+		return
+	}
+
 	if upd.Message != nil && upd.Message.IsCommand() {
-		if upd.Message.Chat.Type != "private" && upd.Message.Command() != "register" {
-			h.reply(upd.Message.Chat.ID, "Пожалуйста, делайте бронирования в личном диалоге со мной")
-			return
-		}
 		h.log.Info("Received command",
 			"user", upd.Message.From.UserName,
 			"user_id", upd.Message.From.ID,
@@ -150,7 +150,7 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 		sess := h.sessions.Get(upd.Message.From.ID)
 		switch {
 		case sess == nil:
-			h.reply(upd.Message.Chat.ID, "Сессия не найдена. Смотри /help")
+			h.reply(upd.Message.Chat.ID, "Необработанный ввод. Смотри /help")
 			return
 		case sess.BookState == tools.BookStateChoosingStartTime:
 			h.handleBookTimepick(ctx, upd.Message)
@@ -159,7 +159,7 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 			h.handleCreateRoomProcessing(ctx, upd.Message)
 			return
 		default:
-			h.reply(upd.Message.Chat.ID, "Необработанный ввод. Смотри /help")
+			h.reply(upd.Message.Chat.ID, "Сессия не найдена. Смотри /help")
 			return
 		}
 	}
