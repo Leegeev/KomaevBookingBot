@@ -19,12 +19,13 @@ import (
 
 // Основной хэндлер
 type Handler struct {
-	bot       *tgbotapi.BotAPI
-	cfg       config.Telegram
-	log       logger.Logger
-	uc        *usecase.BookingService
-	sessions  *tools.SessionsStore // userID -> сессия бронирования
-	roleCache *RoleCache           // userID -> роль (user/admin)
+	bot        *tgbotapi.BotAPI
+	cfg        config.Telegram
+	log        logger.Logger
+	uc         *usecase.BookingService
+	sessions   *tools.SessionsStore // userID -> сессия бронирования
+	logSession *tools.LogsStore     // userID -> сессия журналов
+	roleCache  *RoleCache           // userID -> роль (user/admin)
 
 	messageID int64
 	msgMu     sync.Mutex
@@ -40,6 +41,7 @@ func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc
 		log:              log,
 		uc:               uc,
 		sessions:         tools.NewSessionStore(),
+		logSession:       tools.NewLogsStore(),
 		roleCache:        NewRoleCache(cfg.RoleCacheTTL),
 		messageID:        0,
 		msgMu:            sync.Mutex{},
@@ -240,16 +242,17 @@ func (h *Handler) registerRoutes() {
 
 	// Журналы. Кнопки
 	h.commandHandlers[tools.TextMainLogButton] = h.handleLog
-	h.commandHandlers[tools.TextLogSoglasheniyaButton] = h.handleLogSoglasheniya
-	h.commandHandlers[tools.TextLogAdvokatZaprosiButton] = h.handleLogZaprosi
+	h.commandHandlers[tools.TextLogCreateButton] = h.handleLogCreate0
+	h.commandHandlers[tools.TextLogMyButton] = h.handleLogMy
+	h.commandHandlers[tools.TextLogExportButton] = h.handleLogExport
 	h.commandHandlers[tools.TextLogMainMenuButton] = h.handleMainMenu
 
-	// Журналы. Управление
-	h.commandHandlers[tools.TextLogSoglCreateButton] = h.handleLogSoglCreate
-	h.commandHandlers[tools.TextLogSoglMyButton] = h.handleLogSoglMy
-	h.commandHandlers[tools.TextLogSoglExportButton] = h.handleLogSoglExport
+	// // Журналы. Управление
+	// h.commandHandlers[tools.TextLogSoglCreateButton] = h.handleLogSoglCreate
+	// h.commandHandlers[tools.TextLogSoglMyButton] = h.handleLogSoglMy
+	// h.commandHandlers[tools.TextLogSoglExportButton] = h.handleLogSoglExport
 
-	h.commandHandlers[tools.TextLogAZCreateButton] = h.handleLogAZCreate
-	h.commandHandlers[tools.TextLogAZMyButton] = h.handleLogAZMy
-	h.commandHandlers[tools.TextLogAZExportButton] = h.handleLogAZExport
+	// h.commandHandlers[tools.TextLogAZCreateButton] = h.handleLogAZCreate
+	// h.commandHandlers[tools.TextLogAZMyButton] = h.handleLogAZMy
+	// h.commandHandlers[tools.TextLogAZExportButton] = h.handleLogAZExport
 }

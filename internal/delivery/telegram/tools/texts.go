@@ -31,26 +31,39 @@ const (
 	TextMainHelpButton       = "ℹ️ Помощь"
 
 	// Журналы
-	TextMainLogButton = "📔 Журналы"
+	TextMainLogButton = "📔 Соглашения и Запросы"
 
-	// Журналы кнопки
-	TextLogSoglasheniyaButton   = "📄 Соглашения"
-	TextLogAdvokatZaprosiButton = "🔍 Адвокатские Запросы"
-	TextLogMainMenuButton       = "🔙В главное меню"
-
-	// Журналы управление Soglasheniya
-	TextLogSoglCreateButton = "➕ Создать соглашение"
-	TextLogSoglMyButton     = "🔍 Мои записи"
-	TextLogSoglExportButton = "📤 Экспортировать записи"
-
-	// Журналы управление AdvokatZaprosi
-	TextLogAZCreateButton = "➕ Создать запрос"
-	TextLogAZMyButton     = "🔍 Мои запросы"
-	TextLogAZExportButton = "📤 Экспортировать запросы"
+	// Журналы управление
+	TextLogCreateButton   = "➕ Создать запись"
+	TextLogMyButton       = "🔍 Мои записи"
+	TextLogExportButton   = "📤 Экспортировать записи"
+	TextLogMainMenuButton = "🔙 В главное меню"
 )
 
+// тексты Журналов
 const (
 	TextLogMainMenu SafeText = "📔 Вы в меню журналов. Выберите действие:"
+	// Тексты inline
+	TextLogSogl   = "Соглашение"
+	TextLogZapros = "Запрос"
+
+	// Тексты Флоу Создания
+	TextLogCreateChooseType SafeText = "➕ Выберите тип записи:"
+	TextLogCalendar         SafeText = "📅 Выберите дату:"
+	TextLogAskName          SafeText = `🙋‍♂️ Введите *ваше* ФИО:
+(При следующем создании записи, ФИО будет подставлено автоматически. 
+Отредактировать его можно будет только через админа)`
+	TextLogAskDoveritel SafeText = `📜 Введите сведения о доверителе:`
+	TextLogAskComment   SafeText = `💬 Опишите суть вопроса:`
+	TextLogConfirm      SafeText = `✅ Подтвердите создание записи:
+📝 Тип: *%s*
+📅 Дата: *%s*
+👤 ФИО: *%s*
+📜 Доверитель: *%s*
+💬 Комментарий: *%s*`
+	TextLogYes SafeText = `🎉 Запись успешно создана!
+	Ваш номер записи: *%d*.`
+	TextLogNo SafeText = "❌ Создание записи отменено."
 )
 
 // тексты /start /help menu
@@ -222,6 +235,24 @@ func BuildMyOperationStr(bk domain.Booking) SafeText {
 		bk.Range.Start.Format("02.01.2006"),
 		bk.Range.Start.Format("15:04"),
 		bk.Range.End.Sub(bk.Range.Start).String(),
+	))
+}
+
+func BuildLogConfirmationStr(sess *LogsSession) SafeText {
+	return SafeText(fmt.Sprintf(
+		TextLogConfirm.String(),
+		sess.Type,
+		sess.Date.Format("02.01.2006"),
+		sess.UserName,
+		sess.Doveritel,
+		sess.Comment,
+	))
+}
+
+func BuildLogConfirmedStr(num int) SafeText {
+	return SafeText(fmt.Sprintf(
+		TextLogYes.String(),
+		num,
 	))
 }
 

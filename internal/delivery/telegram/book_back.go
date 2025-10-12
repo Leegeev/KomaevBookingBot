@@ -33,7 +33,7 @@ func (h *Handler) handleBookListBack(ctx context.Context, cq *tgbotapi.CallbackQ
 		h.log.Warn("Failed to get user role on user", "err", err, "user_id", cq.From.ID, "username", cq.From.UserName)
 		role = tools.Member
 	}
-	replyKB := tools.(role)
+	replyKB := tools.BuildMainMenuKB(role)
 
 	msg := tgbotapi.NewMessage(cq.Message.Chat.ID, tools.TextMainMenu.String())
 	msg.ReplyMarkup = replyKB
