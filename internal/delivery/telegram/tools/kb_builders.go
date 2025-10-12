@@ -224,3 +224,25 @@ func BuildMainMenuKB(role string) tgbotapi.ReplyKeyboardMarkup {
 
 	return kb
 }
+
+func BuildLogMainKB() tgbotapi.ReplyKeyboardMarkup {
+	// TODO
+	row1 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(TextLogSoglasheniyaButton),
+	)
+	row2 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(TextLogAdvokatZaprosiButton),
+	)
+	row3 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(TextLogMainMenuButton),
+	)
+
+	rows := [][]tgbotapi.KeyboardButton{row1, row2, row3}
+
+	// собираем клавиатуру
+	kb := tgbotapi.NewReplyKeyboard(rows...)
+	kb.ResizeKeyboard = true
+	kb.OneTimeKeyboard = false
+
+	return kb
+}

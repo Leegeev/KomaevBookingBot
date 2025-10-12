@@ -232,5 +232,24 @@ func (h *Handler) registerRoutes() {
 	h.callbackHandlers["deactivate:confirm_cancel"] = h.handleConfirmCancel
 	h.callbackHandlers["deactivate:confirm_back"] = h.handleDeactivateConfirmBack
 
-	// h.callbackHandlers["my:reschedule"] = h.handleMyReschedule
+	// ------------ Журналы ------------
+
+	// Журналы. Команды
+	h.commandHandlers["log"] = h.handleLog
+	h.commandHandlers["find"] = h.handleLogFind
+
+	// Журналы. Кнопки
+	h.commandHandlers[tools.TextMainLogButton] = h.handleLog
+	h.commandHandlers[tools.TextLogSoglasheniyaButton] = h.handleLogSoglasheniya
+	h.commandHandlers[tools.TextLogAdvokatZaprosiButton] = h.handleLogZaprosi
+	h.commandHandlers[tools.TextLogMainMenuButton] = h.handleMainMenu
+
+	// Журналы. Управление
+	h.commandHandlers[tools.TextLogSoglCreateButton] = h.handleLogSoglCreate
+	h.commandHandlers[tools.TextLogSoglMyButton] = h.handleLogSoglMy
+	h.commandHandlers[tools.TextLogSoglExportButton] = h.handleLogSoglExport
+
+	h.commandHandlers[tools.TextLogAZCreateButton] = h.handleLogAZCreate
+	h.commandHandlers[tools.TextLogAZMyButton] = h.handleLogAZMy
+	h.commandHandlers[tools.TextLogAZExportButton] = h.handleLogAZExport
 }

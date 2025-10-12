@@ -29,6 +29,28 @@ const (
 	TextMainCreateRoomButton = "➕ Создать комнату"
 	TextMainDeleteRoomButton = "🗑️ Удалить комнату"
 	TextMainHelpButton       = "ℹ️ Помощь"
+
+	// Журналы
+	TextMainLogButton = "📔 Журналы"
+
+	// Журналы кнопки
+	TextLogSoglasheniyaButton   = "📄 Соглашения"
+	TextLogAdvokatZaprosiButton = "🔍 Адвокатские Запросы"
+	TextLogMainMenuButton       = "🔙В главное меню"
+
+	// Журналы управление Soglasheniya
+	TextLogSoglCreateButton = "➕ Создать соглашение"
+	TextLogSoglMyButton     = "🔍 Мои записи"
+	TextLogSoglExportButton = "📤 Экспортировать записи"
+
+	// Журналы управление AdvokatZaprosi
+	TextLogAZCreateButton = "➕ Создать запрос"
+	TextLogAZMyButton     = "🔍 Мои запросы"
+	TextLogAZExportButton = "📤 Экспортировать запросы"
+)
+
+const (
+	TextLogMainMenu SafeText = "📔 Вы в меню журналов. Выберите действие:"
 )
 
 // тексты /start /help menu
