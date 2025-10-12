@@ -25,4 +25,5 @@ var (
 	ErrNotOwner              = errors.New("user does not own this booking")
 
 	ErrRecordNotFound = errors.New("record not found")
+	ErrUserNotFound   = errors.New("user not found")
 )

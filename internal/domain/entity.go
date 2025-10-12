@@ -53,3 +53,9 @@ type Zapros struct {
 	Date      time.Time
 	CreatedAt time.Time
 }
+
+type User struct {
+	ID        int64
+	FIO       string
+	CreatedAt time.Time
+}

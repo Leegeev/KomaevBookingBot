@@ -256,8 +256,46 @@ func BuildLogConfirmedStr(num int64) SafeText {
 	))
 }
 
-func BuildLogListStr(logs string) SafeText {
-	// TODO:
+func BuildLogSoglListStr(logs []domain.Soglashenie) SafeText {
+	if len(logs) == 0 {
+		return SafeText("📄 Соглашений не найдено.")
+	}
+
+	var b strings.Builder
+	b.WriteString("*📑 Список соглашений:*\n\n")
+
+	for i, log := range logs {
+		b.WriteString(fmt.Sprintf("%d. *%s*\n", i+1, log.UserName))
+		b.WriteString(fmt.Sprintf("🆔 ID: `ЭС%d`\n", log.ID))
+		b.WriteString(fmt.Sprintf("📅 Дата: %s\n", log.Date.Format("02.01.2006")))
+		b.WriteString(fmt.Sprintf("👤 Доверитель: %s\n", log.Doveritel))
+		b.WriteString(fmt.Sprintf("💬 Комментарий: %s\n", log.Comment))
+		b.WriteString(fmt.Sprintf("⏰ Создано: %s\n", log.CreatedAt.Format("02.01.2006 15:04")))
+		b.WriteString("\n")
+	}
+
+	return SafeText(b.String())
+}
+
+func BuildLogZaprosiListStr(logs []domain.Zapros) SafeText {
+	if len(logs) == 0 {
+		return SafeText("📄 Запросов не найдено.")
+	}
+
+	var b strings.Builder
+	b.WriteString("*📊 Список запросов:*\n\n")
+
+	for i, log := range logs {
+		b.WriteString(fmt.Sprintf("%d. *%s*\n", i+1, log.UserName))
+		b.WriteString(fmt.Sprintf("🆔 ID: `ЭЗ%d`\n", log.ID))
+		b.WriteString(fmt.Sprintf("📅 Дата: %s\n", log.Date.Format("02.01.2006")))
+		b.WriteString(fmt.Sprintf("👤 Доверитель: %s\n", log.Doveritel))
+		b.WriteString(fmt.Sprintf("💬 Комментарий: %s\n", log.Comment))
+		b.WriteString(fmt.Sprintf("⏰ Создано: %s\n", log.CreatedAt.Format("02.01.2006 15:04")))
+		b.WriteString("\n")
+	}
+
+	return SafeText(b.String())
 }
 
 type SafeText string

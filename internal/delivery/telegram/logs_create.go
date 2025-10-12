@@ -110,16 +110,25 @@ func (h *Handler) handleLogCreate2(ctx context.Context, cq *tgbotapi.CallbackQue
 	}
 
 	session.Date = date
-	session.State = tools.StateInputingName // ⚠️⚠️⚠️ сделать проверку на ввод
 
 	edit := tgbotapi.EditMessageTextConfig{}
 
 	// Запрашивается, либо ввод ФИО
 	// либо ввод ДОВЕРИТЕЛЯ
-	if h.logsUC.GetUser(ctx, cq.From.ID) != nil {
-		// TODO: если пользователь не найден, запросить ФИО
-		// Тогда сразу к следующему шагу
+	if user, err := h.logsUC.GetUser(ctx, cq.From.ID); err == nil {
+		session.State = tools.StateInputingDoveritel
+		session.UserName = user.FIO
+		edit = tgbotapi.NewEditMessageTextAndMarkup(
+			cq.Message.Chat.ID,
+			cq.Message.MessageID,
+			tools.TextLogAskDoveritel.String(),
+			tgbotapi.NewInlineKeyboardMarkup(
+				[]tgbotapi.InlineKeyboardButton{
+					tools.BuildBackInlineKBButton("log:step3_back"),
+				}),
+		)
 	} else {
+		session.State = tools.StateInputingName
 		edit = tgbotapi.NewEditMessageTextAndMarkup(
 			cq.Message.Chat.ID,
 			cq.Message.MessageID,

@@ -2,9 +2,7 @@ package telegram
 
 import (
 	"context"
-	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -62,14 +60,15 @@ func (h *Handler) handleLogMy1(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 	parts := strings.Split(cq.Data, ":")
 	logType := parts[2]
 	msgText := ""
+
 	if logType == "sogl" {
-		logs := h.logsUC.GetSoglasheniyaByUserID(ctx, cq.From.ID)
-		msgText = tools.BuildLogListStr(logs)
+		logs, _ := h.logsUC.GetSoglasheniyaByUserID(ctx, cq.From.ID)
+		msgText = tools.BuildLogSoglListStr(logs).String()
 	}
 
 	if logType == "zapros" {
-		logs := h.logsUC.GetZaprosiByUserId(ctx, cq.From.ID)
-		msgText = tools.BuildLogListStr(logs)
+		logs, _ := h.logsUC.GetZaprosiByUserID(ctx, cq.From.ID)
+		msgText = tools.BuildLogZaprosiListStr(logs).String()
 	}
 
 	msg := tgbotapi.NewMessage(
@@ -93,25 +92,44 @@ func (h *Handler) handleLogExport(ctx context.Context, msg *tgbotapi.Message) {
 			"err", ctx.Err())
 		return
 	}
-	filePath, err := h.logsUC.CreateExcelReport(ctx)
+	zaprosiPath, sogliPath, err := h.logsUC.CreateExcelReport(ctx)
 	if err != nil {
 		h.reply(msg.Chat.ID, "Ошибка при создании отчета 😔")
 		h.log.Error("CreateExcelReport error", "err", err)
 		return
 	}
-	defer os.Remove(filePath)
 
-	// Отправляем файл пользователю
-	doc := tgbotapi.NewDocument(msg.Chat.ID, tgbotapi.FilePath(filePath))
-	doc.Caption = "📊 Отчёт по Журналам"
-	if _, err := h.bot.Send(doc); err != nil {
-		h.log.Error("Failed to send Excel file", "err", err)
-		h.reply(msg.Chat.ID, "Не удалось отправить файл 😔")
-		h.notifyAdmin("Failed to send Excel file to user")
-		return
-	}
+	go func() {
+		defer os.Remove(zaprosiPath)
+		doc1 := tgbotapi.NewDocument(msg.Chat.ID, tgbotapi.FilePath(zaprosiPath))
+		doc1.Caption = "📊 Отчёт по запросам"
+		if _, err := h.bot.Send(doc1); err != nil {
+			h.log.Error("Failed to send zapros report", "err", err)
+			h.reply(msg.Chat.ID, "❌ Ошибка при отправке отчёта по запросам")
+			return
+		}
+		h.log.Info("Zapros report sent successfully", "chat_id", msg.Chat.ID)
+	}()
+
+	go func() {
+		defer os.Remove(sogliPath)
+		doc2 := tgbotapi.NewDocument(msg.Chat.ID, tgbotapi.FilePath(sogliPath))
+		doc2.Caption = "📑 Отчёт по соглашениям"
+		if _, err := h.bot.Send(doc2); err != nil {
+			h.log.Error("Failed to send soglasheniya report", "err", err)
+			h.reply(msg.Chat.ID, "❌ Ошибка при отправке отчёта по соглашениям")
+			return
+		}
+		h.log.Info("Soglasheniya report sent successfully", "chat_id", msg.Chat.ID)
+	}()
 }
 
+func (h *Handler) handleLogFind(ctx context.Context, msg *tgbotapi.Message) {
+	// TODO
+	h.reply(msg.Chat.ID, "Команда еще не реализована 😔")
+}
+
+/*
 func (h *Handler) handleLogFind(ctx context.Context, msg *tgbotapi.Message) {
 	if err := ctx.Err(); err != nil {
 		h.log.Warn("Context canceled in /handleLogFind",
@@ -198,3 +216,4 @@ func (h *Handler) handleLogFind(ctx context.Context, msg *tgbotapi.Message) {
 	// Обработать найденную запись. Вывести сведения
 	h.reply(msg.Chat.ID, fmt.Sprintf("Найден номер запроса: ЭЗ%d", id))
 }
+*/

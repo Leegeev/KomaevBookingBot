@@ -169,4 +169,29 @@ const (
 		FROM zaprosy
 		WHERE id = $1;
 	`
+
+	qInsertUser = `
+		INSERT INTO users (id, fio)
+		VALUES ($1, $2)
+		ON CONFLICT (id) DO UPDATE SET fio = EXCLUDED.fio;
+	`
+
+	qSelectUserByID = `
+		SELECT id, fio, created_at
+		FROM users
+		WHERE id = $1;
+	`
+	qSelectSoglasheniyaAfterDate = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM soglasheniya
+		WHERE created_at >= $1 AND created_at <= NOW()
+		ORDER BY created_at DESC;
+	`
+
+	qSelectZaprosyAfterDate = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM zaprosy
+		WHERE created_at >= $1 AND created_at <= NOW()
+		ORDER BY created_at DESC;
+	`
 )

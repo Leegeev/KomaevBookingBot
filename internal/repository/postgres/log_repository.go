@@ -44,6 +44,37 @@ type zaprosRow struct {
 	CreatedAt time.Time `db:"created_at"`
 }
 
+type userRow struct {
+	ID        int64     `db:"id"`
+	FIO       string    `db:"fio"`
+	CreatedAt time.Time `db:"created_at"`
+}
+
+// Получить пользователя по ID
+func (r *logRepositoryPG) GetUser(ctx context.Context, id int64) (domain.User, error) {
+	var u userRow
+	if err := r.db.GetContext(ctx, &u, qSelectUserByID, id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, domain.ErrUserNotFound
+		}
+		return domain.User{}, err
+	}
+	return domain.User{
+		ID:        u.ID,
+		FIO:       u.FIO,
+		CreatedAt: u.CreatedAt,
+	}, nil
+}
+
+// Создать (или обновить) пользователя
+func (r *logRepositoryPG) CreateUser(ctx context.Context, id int64, fio string) error {
+	_, err := r.db.ExecContext(ctx, qInsertUser, id, fio)
+	if err != nil {
+		return fmt.Errorf("failed to insert user: %w", err)
+	}
+	return nil
+}
+
 // ────────────────────────────────
 //         Create
 // ────────────────────────────────
@@ -167,4 +198,32 @@ func mapPgErr(err error) error {
 		}
 	}
 	return err
+}
+
+// GetSoglasheniyaAfterDate возвращает соглашения, созданные с заданной даты до текущего момента.
+func (r *logRepositoryPG) GetSoglasheniyaAfterDate(ctx context.Context, date time.Time) ([]domain.Soglashenie, error) {
+	var rows []soglashenieRow
+	if err := r.db.SelectContext(ctx, &rows, qSelectSoglasheniyaAfterDate, date); err != nil {
+		return nil, fmt.Errorf("failed to select soglasheniya after date: %w", err)
+	}
+
+	out := make([]domain.Soglashenie, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, soglashenieRowToDomain(row))
+	}
+	return out, nil
+}
+
+// GetZaprosiAfterDate возвращает запросы, созданные с заданной даты до текущего момента.
+func (r *logRepositoryPG) GetZaprosiAfterDate(ctx context.Context, date time.Time) ([]domain.Zapros, error) {
+	var rows []zaprosRow
+	if err := r.db.SelectContext(ctx, &rows, qSelectZaprosyAfterDate, date); err != nil {
+		return nil, fmt.Errorf("failed to select zaprosy after date: %w", err)
+	}
+
+	out := make([]domain.Zapros, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, zaprosRowToDomain(row))
+	}
+	return out, nil
 }

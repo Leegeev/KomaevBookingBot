@@ -37,8 +37,16 @@ type BookingRepository interface {
 type LogRepository interface {
 	CreateSoglashenie(ctx context.Context, s Soglashenie) (int64, error)
 	CreateZapros(ctx context.Context, z Zapros) (int64, error)
+
 	GetSoglasheniyaByUserID(ctx context.Context, userID UserID) ([]Soglashenie, error)
 	GetZaprosiByUserID(ctx context.Context, userID UserID) ([]Zapros, error)
+
 	GetSoglashenieByID(ctx context.Context, id int64) (Soglashenie, error)
 	GetZaprosByID(ctx context.Context, id int64) (Zapros, error)
+
+	GetSoglasheniyaAfterDate(ctx context.Context, date time.Time) ([]Soglashenie, error)
+	GetZaprosiAfterDate(ctx context.Context, date time.Time) ([]Zapros, error)
+
+	GetUser(ctx context.Context, id int64) (User, error)
+	CreateUser(ctx context.Context, id int64, FIO string) error
 }
