@@ -20,11 +20,6 @@ func (h *Handler) handleMy(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	h.log.Info("Received /my command",
-		"user", msg.From.UserName,
-		"user_id", msg.From.ID,
-		"chat_id", msg.Chat.ID)
-
 	bookings, err := h.uc.ListUserBookings(ctx, int64(msg.From.ID))
 	if err != nil {
 		h.log.Error("Failed to list user bookings", "user_id", msg.From.ID, "error", err)

@@ -17,6 +17,10 @@ func (s *LogService) CreateUser(ctx context.Context, cmd CreateLogCmd) error {
 	return nil
 }
 
+// GetSoglasheniyaByUserID
+// GetZaprosiByUserId
+// CreateLog // по type определить какую запись создать
+
 type CreateLogCmd struct {
 	UserID    domain.UserID
 	UserName  string

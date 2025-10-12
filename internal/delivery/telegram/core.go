@@ -149,16 +149,26 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 			return
 		}
 
-		sess := h.sessions.Get(upd.Message.From.ID)
+		bookSess := h.sessions.Get(upd.Message.From.ID)
+		logSess := h.logSession.Get(upd.Message.From.ID)
 		switch {
-		case sess == nil:
+		case bookSess == nil && logSess == nil:
 			h.reply(upd.Message.Chat.ID, "Необработанный ввод. Смотри /help")
 			return
-		case sess.BookState == tools.BookStateChoosingStartTime:
+		case bookSess != nil && bookSess.BookState == tools.BookStateChoosingStartTime:
 			h.handleBookTimepick(ctx, upd.Message)
 			return
-		case sess.BookState == tools.StateProccessingRoomCreation:
+		case bookSess != nil && bookSess.BookState == tools.StateProccessingRoomCreation:
 			h.handleCreateRoomProcessing(ctx, upd.Message)
+			return
+		case logSess != nil && logSess.State == tools.StateInputingName:
+			h.handleLogCreate3(ctx, upd.Message)
+			return
+		case logSess != nil && logSess.State == tools.StateInputingDoveritel:
+			h.handleLogCreate4(ctx, upd.Message)
+			return
+		case logSess != nil && logSess.State == tools.StageInputingComment:
+			h.handleLogCreate5(ctx, upd.Message)
 			return
 		default:
 			h.reply(upd.Message.Chat.ID, "Сессия не найдена. Смотри /help")
@@ -243,10 +253,25 @@ func (h *Handler) registerRoutes() {
 	// Журналы. Кнопки
 	h.commandHandlers[tools.TextMainLogButton] = h.handleLog
 	h.commandHandlers[tools.TextLogCreateButton] = h.handleLogCreate0
-	h.commandHandlers[tools.TextLogMyButton] = h.handleLogMy
+	h.commandHandlers[tools.TextLogMyButton] = h.handleLogMy0
 	h.commandHandlers[tools.TextLogExportButton] = h.handleLogExport
 	h.commandHandlers[tools.TextLogMainMenuButton] = h.handleMainMenu
 
+	// Журналы коллбэки
+	h.callbackHandlers["log:create"] = h.handleLogCreate1_0
+	h.callbackHandlers["log:calendar_nav"] = h.handleLogСreate1_1
+	h.callbackHandlers["log:calendar"] = h.handleLogCreate2
+	h.callbackHandlers["log:confirm"] = h.handleLogCreate2
+
+	h.callbackHandlers["log:create_back"] = h.handleLogCreateBack
+	h.callbackHandlers["log:calendar_back"] = h.handleLogCalendarBack
+	h.callbackHandlers["log:step2_back"] = h.handleLogStep2Back
+	h.callbackHandlers["log:step3_back"] = h.handleLogStep3Back
+	h.callbackHandlers["log:step4_back"] = h.handleLogStep4Back
+	h.callbackHandlers["log:confirm_back"] = h.handleLogConfirmBack
+
+	h.callbackHandlers["log:my"] = h.handleLogMy1
+	// Флоу создания записи в журнале
 	// // Журналы. Управление
 	// h.commandHandlers[tools.TextLogSoglCreateButton] = h.handleLogSoglCreate
 	// h.commandHandlers[tools.TextLogSoglMyButton] = h.handleLogSoglMy

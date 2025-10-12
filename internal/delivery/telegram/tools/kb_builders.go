@@ -260,13 +260,14 @@ func BuildLogMainKB(role string) tgbotapi.ReplyKeyboardMarkup {
 	return kb
 }
 
-func BuildLogCreateKB() tgbotapi.InlineKeyboardMarkup {
+func BuildLogCreateKB(faze string) tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 3)
 	// кнопка соглашения
 	{
 		btnText := TextLogSogl
 		// data := fmt.Sprintf("log:create:%d", 1)
-		data := "log:create:sogl"
+		// data := "log:create:sogl"
+		data := fmt.Sprintf("log:%s:sogl", faze)
 		btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
 	}
@@ -274,7 +275,8 @@ func BuildLogCreateKB() tgbotapi.InlineKeyboardMarkup {
 	{
 		btnText := TextLogZapros
 		// data := fmt.Sprintf("log:create:%d", 2)
-		data := "log:create:zapros"
+		// data := "log:create:zapros"
+		data := fmt.Sprintf("log:%s:zapros", faze)
 		btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
 	}
@@ -291,8 +293,8 @@ func BuildLogCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 4)
 	{ // Навигация
 		row := tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("⏪", fmt.Sprintf("book:calendar_nav:%d", shift-1)),
-			tgbotapi.NewInlineKeyboardButtonData("⏩", fmt.Sprintf("book:calendar_nav:%d", shift+1)),
+			tgbotapi.NewInlineKeyboardButtonData("⏪", fmt.Sprintf("log:calendar_nav:%d", shift-1)),
+			tgbotapi.NewInlineKeyboardButtonData("⏩", fmt.Sprintf("log:calendar_nav:%d", shift+1)),
 		)
 		rows = append(rows, row)
 	}

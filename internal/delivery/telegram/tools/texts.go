@@ -48,9 +48,9 @@ const (
 	TextLogZapros = "Запрос"
 
 	// Тексты Флоу Создания
-	TextLogCreateChooseType SafeText = "➕ Выберите тип записи:"
-	TextLogCalendar         SafeText = "📅 Выберите дату:"
-	TextLogAskName          SafeText = `🙋‍♂️ Введите *ваше* ФИО:
+	TextLogChooseType SafeText = "➕ Выберите тип записи:"
+	TextLogCalendar   SafeText = "📅 Выберите дату:"
+	TextLogAskName    SafeText = `🙋‍♂️ Введите *ваше* ФИО:
 (При следующем создании записи, ФИО будет подставлено автоматически. 
 Отредактировать его можно будет только через админа)`
 	TextLogAskDoveritel SafeText = `📜 Введите сведения о доверителе:`
@@ -254,6 +254,10 @@ func BuildLogConfirmedStr(num int) SafeText {
 		TextLogYes.String(),
 		num,
 	))
+}
+
+func BuildLogListStr(logs string) SafeText {
+	// TODO:
 }
 
 type SafeText string

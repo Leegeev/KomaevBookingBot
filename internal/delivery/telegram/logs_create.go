@@ -2,7 +2,6 @@ package telegram
 
 import (
 	"context"
-	"go/types"
 	"strconv"
 	"strings"
 	"time"
@@ -23,12 +22,12 @@ func (h *Handler) handleLogCreate0(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	m := tgbotapi.NewMessage(msg.Chat.ID, tools.TextLogCreateChooseType.String())
+	m := tgbotapi.NewMessage(msg.Chat.ID, tools.TextLogChooseType.String())
 	m.ParseMode = "MarkdownV2"
-	m.ReplyMarkup = tools.BuildLogCreateKB()
+	m.ReplyMarkup = tools.BuildLogCreateKB("create")
 	go func() {
 		if _, err := h.bot.Send(m); err != nil {
-			h.log.Error("Failed to handle /book on rooms list", "err", err)
+			h.log.Error("Failed to handle /handleLogCreate0 on rooms list", "err", err)
 		}
 	}()
 }
@@ -58,7 +57,7 @@ func (h *Handler) handleLogCreate1_0(ctx context.Context, cq *tgbotapi.CallbackQ
 	edit.ParseMode = "MarkdownV2"
 	go func() {
 		if _, err := h.bot.Send(edit); err != nil {
-			h.log.Error("Failed to edit message on book list", "err", err)
+			h.log.Error("Failed to edit message on handleLogCreate1_0 list", "err", err)
 		}
 	}()
 }
@@ -80,7 +79,7 @@ func (h *Handler) handleLogСreate1_1(ctx context.Context, cq *tgbotapi.Callback
 	editMarkup := tgbotapi.NewEditMessageReplyMarkup(
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
-		tools.BuildCalendarKB(shift),
+		tools.BuildLogCalendarKB(shift),
 	)
 	go func() {
 		if _, err := h.bot.Request(editMarkup); err != nil {
@@ -143,7 +142,7 @@ func (h *Handler) handleLogCreate2(ctx context.Context, cq *tgbotapi.CallbackQue
 // Step 3 ФИО введено
 // Парсер Фио и ввод доверителя
 func (h *Handler) handleLogCreate3(ctx context.Context, msg *tgbotapi.Message) {
-	FIO := msg.Text
+	FIO := strings.TrimSpace(msg.Text)
 	session := h.logSession.Get(msg.From.ID)
 	if session == nil {
 		h.reply(msg.Chat.ID, "Сессия не найдена")
@@ -199,7 +198,7 @@ func (h *Handler) handleLogCreate3(ctx context.Context, msg *tgbotapi.Message) {
 // Step 4 Доверитель введен. Сразу сюда, если ФИО есть в БД
 // Парсер Доверителя и Ввод комментария
 func (h *Handler) handleLogCreate4(ctx context.Context, msg *tgbotapi.Message) {
-	Doveritel := msg.Text
+	Doveritel := strings.TrimSpace(msg.Text)
 	session := h.logSession.Get(msg.From.ID)
 	if session == nil {
 		h.reply(msg.Chat.ID, "Сессия не найдена")
@@ -234,7 +233,7 @@ func (h *Handler) handleLogCreate4(ctx context.Context, msg *tgbotapi.Message) {
 	go func() {
 		sentMsg, err := h.bot.Send(newMsg)
 		if err != nil {
-			h.log.Error("Failed to send a new message on handleLogCreate3", "err", err)
+			h.log.Error("Failed to send a new message on handleLogCreate4", "err", err)
 			return
 		}
 		// обновляем messageID в сессии
@@ -247,7 +246,7 @@ func (h *Handler) handleLogCreate4(ctx context.Context, msg *tgbotapi.Message) {
 // Step 5 Комментарий введен.
 // Парсер комментария и Подтверждение создания
 func (h *Handler) handleLogCreate5(ctx context.Context, msg *tgbotapi.Message) {
-	comment := msg.Text
+	comment := strings.TrimSpace(msg.Text)
 	session := h.logSession.Get(msg.From.ID)
 	if session == nil {
 		h.reply(msg.Chat.ID, "Сессия не найдена")
@@ -267,7 +266,7 @@ func (h *Handler) handleLogCreate5(ctx context.Context, msg *tgbotapi.Message) {
 	edit.ParseMode = "MarkdownV2"
 	go func() {
 		if _, err := h.bot.Send(edit); err != nil {
-			h.log.Error("Failed to edit message on handleLogCreate3", "err", err)
+			h.log.Error("Failed to edit message on handleLogCreate5", "err", err)
 		}
 	}()
 }
@@ -301,7 +300,7 @@ func (h *Handler) handleLogCreate6(ctx context.Context, cq *tgbotapi.CallbackQue
 		tools.BuildBlankInlineKB(),
 	)
 	if _, err := h.bot.Send(edit); err != nil {
-		h.log.Error("Failed to edit message on confirmation", "err", err)
+		h.log.Error("Failed to EDIT message on handleLogCreate6 confirmation", "err", err)
 	}
 
 	var replyText string
@@ -326,7 +325,7 @@ func (h *Handler) handleLogCreate6(ctx context.Context, cq *tgbotapi.CallbackQue
 	newMsg.ParseMode = "MarkdownV2"
 	go func() {
 		if _, err := h.bot.Send(newMsg); err != nil {
-			h.log.Error("Failed to send a new message on confirmation", "err", err)
+			h.log.Error("Failed to SEND a new message on handleLogCreate6 confirmation", "err", err)
 		}
 	}()
 }
