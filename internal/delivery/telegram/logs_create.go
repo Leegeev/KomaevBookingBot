@@ -116,7 +116,7 @@ func (h *Handler) handleLogCreate2(ctx context.Context, cq *tgbotapi.CallbackQue
 
 	// Запрашивается, либо ввод ФИО
 	// либо ввод ДОВЕРИТЕЛЯ
-	if h.logsUC.GetUser(cq.From.ID) != "Не найден" {
+	if h.logsUC.GetUser(ctx, cq.From.ID) != nil {
 		// TODO: если пользователь не найден, запросить ФИО
 		// Тогда сразу к следующему шагу
 	} else {
@@ -150,7 +150,7 @@ func (h *Handler) handleLogCreate3(ctx context.Context, msg *tgbotapi.Message) {
 	}
 
 	// Сохраняем ФИО в БД пользователей
-	if err := h.logsUC.CreateUser(msg.From.ID, FIO); err != nil {
+	if err := h.logsUC.CreateUser(ctx, msg.From.ID, FIO); err != nil {
 		h.log.Error("Failed to save user FIO", "err", err)
 		h.notifyAdmin("Ошибка при сохранении ФИО")
 		h.reply(msg.Chat.ID, "Ошибка при сохранении ФИО. Попробуйте еще раз.")

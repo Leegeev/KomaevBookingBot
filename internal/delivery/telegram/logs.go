@@ -2,6 +2,9 @@ package telegram
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strconv"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -90,12 +93,26 @@ func (h *Handler) handleLogExport(ctx context.Context, msg *tgbotapi.Message) {
 			"err", ctx.Err())
 		return
 	}
-	// TODO
-	h.reply(msg.Chat.ID, "Экспорт журнала пока не реализован.")
+	filePath, err := h.logsUC.CreateExcelReport(ctx)
+	if err != nil {
+		h.reply(msg.Chat.ID, "Ошибка при создании отчета 😔")
+		h.log.Error("CreateExcelReport error", "err", err)
+		return
+	}
+	defer os.Remove(filePath)
+
+	// Отправляем файл пользователю
+	doc := tgbotapi.NewDocument(msg.Chat.ID, tgbotapi.FilePath(filePath))
+	doc.Caption = "📊 Отчёт по Журналам"
+	if _, err := h.bot.Send(doc); err != nil {
+		h.log.Error("Failed to send Excel file", "err", err)
+		h.reply(msg.Chat.ID, "Не удалось отправить файл 😔")
+		h.notifyAdmin("Failed to send Excel file to user")
+		return
+	}
 }
 
 func (h *Handler) handleLogFind(ctx context.Context, msg *tgbotapi.Message) {
-	// TODO
 	if err := ctx.Err(); err != nil {
 		h.log.Warn("Context canceled in /handleLogFind",
 			"user", msg.From.UserName,
@@ -118,27 +135,66 @@ func (h *Handler) handleLogFind(ctx context.Context, msg *tgbotapi.Message) {
 
 	num := strings.TrimSpace(msg.Text)
 
-	if strings.HasPrefix(num, "ЭС") {
-		// Проверка корректности номера соглашения (ЭС)
-		if len(num) < 3 {
-			h.reply(msg.Chat.ID, "Некорректный номер соглашения. Пример: ЭС12345")
-			return
-		}
-		// Здесь будет обработка соглашения
-		h.reply(msg.Chat.ID, "Найден номер соглашения: "+num)
+	// Проверяем длину и префикс
+	if len(num) < 3 {
+		h.reply(msg.Chat.ID, "Некорректный номер. Пример: ЭС12345 или ЭЗ12345")
 		return
 	}
 
-	if strings.HasPrefix(num, "ЭЗ") {
-		// Проверка корректности номера запроса (ЭЗ)
-		if len(num) < 3 {
-			h.reply(msg.Chat.ID, "Некорректный номер запроса. Пример: ЭЗ12345")
-			return
-		}
-		// Здесь будет обработка запроса
-		h.reply(msg.Chat.ID, "Найден номер запроса: "+num)
+	// Определяем тип и отделяем числовую часть
+	var (
+		prefix string
+		idStr  string
+	)
+
+	switch {
+	case strings.HasPrefix(num, "ЭС"):
+		prefix = "ЭС"
+		idStr = strings.TrimPrefix(num, "ЭС")
+	case strings.HasPrefix(num, "ЭЗ"):
+		prefix = "ЭЗ"
+		idStr = strings.TrimPrefix(num, "ЭЗ")
+	default:
+		h.reply(msg.Chat.ID, "Введите корректный номер: ЭС12345 или ЭЗ12345")
 		return
 	}
 
-	h.reply(msg.Chat.ID, "Пожалуйста, введите корректный номер соглашения (ЭС...) или запроса (ЭЗ...)")
+	// Преобразуем числовую часть в int64
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		h.reply(msg.Chat.ID, "Некорректный формат номера. Пример: ЭС12345 или ЭЗ12345")
+		return
+	}
+
+	// Обработка в зависимости от типа
+	switch prefix {
+	case "ЭС":
+		record, err := h.logsUC.GetSoglasheniyaById(ctx, id)
+		// if err != nil {
+		// 	h.reply(msg.Chat.ID, "Ошибка при поиске соглашения")
+		// 	h.log.Error("GetSoglasheniyaById error", "err", err)
+		// 	h.notifyAdmin("Не получилось обработать LogFind из-за ошибки в UC")
+		// 	return
+		// }
+		// h.reply(msg.Chat.ID, fmt.Sprintf("Найден номер соглашения: ЭС%d", id))
+
+	case "ЭЗ":
+		record, err := h.logsUC.GetZaprosById(ctx, id)
+		// if err != nil {
+		// 	h.reply(msg.Chat.ID, "Ошибка при поиске запроса")
+		// 	h.log.Error("GetZaprosById error", "err", err)
+		// 	h.notifyAdmin("Не получилось обработать LogFind из-за ошибки в UC")
+		// 	return
+		// }
+		// h.reply(msg.Chat.ID, fmt.Sprintf("Найден номер запроса: ЭЗ%d", id))
+	}
+
+	if err != nil {
+		h.reply(msg.Chat.ID, "Ошибка при поиске соглашения")
+		h.log.Error("GetSoglasheniyaById error", "err", err)
+		h.notifyAdmin("Не получилось обработать LogFind из-за ошибки в UC")
+		return
+	}
+	// Обработать найденную запись. Вывести сведения
+	h.reply(msg.Chat.ID, fmt.Sprintf("Найден номер запроса: ЭЗ%d", id))
 }

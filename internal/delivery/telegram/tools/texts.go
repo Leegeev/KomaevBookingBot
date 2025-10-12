@@ -249,7 +249,7 @@ func BuildLogConfirmationStr(sess *LogsSession) SafeText {
 	))
 }
 
-func BuildLogConfirmedStr(num int) SafeText {
+func BuildLogConfirmedStr(num int64) SafeText {
 	return SafeText(fmt.Sprintf(
 		TextLogYes.String(),
 		num,

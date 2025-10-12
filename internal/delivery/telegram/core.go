@@ -23,6 +23,7 @@ type Handler struct {
 	cfg        config.Telegram
 	log        logger.Logger
 	uc         *usecase.BookingService
+	logsUC     *usecase.LogService
 	sessions   *tools.SessionsStore // userID -> сессия бронирования
 	logSession *tools.LogsStore     // userID -> сессия журналов
 	roleCache  *RoleCache           // userID -> роль (user/admin)
@@ -34,12 +35,13 @@ type Handler struct {
 	callbackHandlers map[string]func(ctx context.Context, cq *tgbotapi.CallbackQuery)
 }
 
-func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc *usecase.BookingService) *Handler {
+func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc *usecase.BookingService, logsUC *usecase.LogService) *Handler {
 	return &Handler{
 		bot:              bot,
 		cfg:              cfg,
 		log:              log,
 		uc:               uc,
+		logsUC:           logsUC,
 		sessions:         tools.NewSessionStore(),
 		logSession:       tools.NewLogsStore(),
 		roleCache:        NewRoleCache(cfg.RoleCacheTTL),
