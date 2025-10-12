@@ -32,8 +32,6 @@ func NewBookingRepositoryPG(db *sqlx.DB, logger logger.Logger) *bookingRepositor
 	return &bookingRepositoryPG{db: db, logger: logger}
 }
 
-// methods
-
 func (r *bookingRepositoryPG) Create(ctx context.Context, b domain.Booking) error {
 	start := b.Range.Start
 	end := b.Range.End

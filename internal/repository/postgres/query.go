@@ -127,3 +127,46 @@ UPDATE rooms
 SET is_active = TRUE
 WHERE id = $1;
 `
+
+// LOGS
+const (
+	qInsertSoglashenie = `
+		INSERT INTO soglasheniya (user_id, user_name, date, doveritel, comment)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id;
+	`
+
+	qInsertZapros = `
+		INSERT INTO zaprosy (user_id, user_name, date, doveritel, comment)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id;
+	`
+
+	qSelectSoglasheniyaByUser = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM soglasheniya
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+    LIMIT 5;
+	`
+
+	qSelectZaprosyByUser = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM zaprosy
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+    LIMIT 5;
+	`
+
+	qSelectSoglashenieByID = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM soglasheniya
+		WHERE id = $1;
+	`
+
+	qSelectZaprosByID = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM zaprosy
+		WHERE id = $1;
+	`
+)

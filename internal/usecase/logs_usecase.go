@@ -42,24 +42,24 @@ func (s *LogService) CreateUser(ctx context.Context, id int64, FIO string) error
 	return nil
 }
 
-func (s *LogService) GetSoglasheniyaByUserID(ctx context.Context, userID int64) (Soglashenie, error) {
+func (s *LogService) GetSoglasheniyaByUserID(ctx context.Context, userID int64) (domain.Soglashenie, error) {
 	// TODO:
-	return nil, nil
+	return domain.Soglashenie{}, nil
 }
 
-func (s *LogService) GetZaprosiByUserId(ctx context.Context, userID int64) (Zapros, error) {
+func (s *LogService) GetZaprosiByUserId(ctx context.Context, userID int64) (domain.Zapros, error) {
 	// TODO:
-	return nil, nil
+	return domain.Zapros{}, nil
 }
 
-func (s *LogService) GetSoglasheniyaById(ctx context.Context, id int64) (Soglashenie, error) {
+func (s *LogService) GetSoglasheniyaById(ctx context.Context, id int64) (domain.Soglashenie, error) {
 	// TODO:
-	return nil, nil
+	return domain.Soglashenie{}, nil
 }
 
-func (s *LogService) GetZaprosById(ctx context.Context, id int64) (Zapros, error) {
+func (s *LogService) GetZaprosById(ctx context.Context, id int64) (domain.Zapros, error) {
 	// TODO:
-	return nil, nil
+	return domain.Zapros{}, nil
 }
 
 func (s *LogService) CreateLog(ctx context.Context, l CreateLogCmd) (int64, error) { // по type определить какую запись создать {
