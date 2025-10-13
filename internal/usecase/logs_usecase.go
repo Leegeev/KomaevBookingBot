@@ -141,7 +141,7 @@ func (s *LogService) CreateLog(ctx context.Context, cmd CreateLogCmd) (int64, er
 			Date:      cmd.Date,
 			Doveritel: cmd.Doveritel,
 			Comment:   cmd.Comment,
-			CreatedAt: time.Now(),
+			CreatedAt: time.Now().In(s.cfg.OfficeTZ),
 		}
 
 		id, err := s.logRepo.CreateSoglashenie(ctx, sogl)
@@ -159,7 +159,7 @@ func (s *LogService) CreateLog(ctx context.Context, cmd CreateLogCmd) (int64, er
 			Date:      cmd.Date,
 			Doveritel: cmd.Doveritel,
 			Comment:   cmd.Comment,
-			CreatedAt: time.Now(),
+			CreatedAt: time.Now().In(s.cfg.OfficeTZ),
 		}
 
 		id, err := s.logRepo.CreateZapros(ctx, z)

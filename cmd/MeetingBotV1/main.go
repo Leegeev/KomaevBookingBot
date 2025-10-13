@@ -46,9 +46,11 @@ func main() {
 	// Инициализация репозиториев
 	roomRepo := repository.NewRoomRepositoryPG(db, logger)
 	bookingRepo := repository.NewBookingRepositoryPG(db, logger)
+	logRepo := repository.NewLogRepositoryPG(db, logger)
 
 	// Инициализация сервиса
 	service := usecase.NewBookingService(roomRepo, bookingRepo, logger, config.Telegram)
+	logService := usecase.NewLogService(logRepo, logger, config.Telegram)
 
 	// TG BOT
 	bot, err := tgbotapi.NewBotAPI(config.Telegram.Token)
@@ -56,7 +58,7 @@ func main() {
 		logger.Error("Failed to init Telegram bot", "error", err)
 		return
 	}
-	h := telegram.NewHandler(bot, config.Telegram, logger, service)
+	h := telegram.NewHandler(bot, config.Telegram, logger, service, logService)
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
