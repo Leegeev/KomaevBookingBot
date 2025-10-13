@@ -6,14 +6,15 @@ import (
 )
 
 type LogsSession struct {
-	State     int64
-	UserID    int64
-	MessageID int
-	Type      string // "sogl" или "zapros"
-	Date      time.Time
-	UserName  string
-	Doveritel string
-	Comment   string
+	State        int64
+	UserID       int64
+	MessageID    int
+	Type         string // "sogl" или "zapros"
+	Date         time.Time
+	UserName     string
+	Doveritel    string
+	Comment      string
+	Registration bool
 }
 
 // states

@@ -104,7 +104,7 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 		return
 	}
 
-	if upd.Message.Chat.Type != "private" {
+	if upd.Message != nil && upd.Message.Chat != nil && upd.Message.Chat.Type != "private" {
 		return
 	}
 
@@ -263,7 +263,7 @@ func (h *Handler) registerRoutes() {
 	h.callbackHandlers["log:create"] = h.handleLogCreate1_0
 	h.callbackHandlers["log:calendar_nav"] = h.handleLogСreate1_1
 	h.callbackHandlers["log:calendar"] = h.handleLogCreate2
-	h.callbackHandlers["log:confirm"] = h.handleLogCreate2
+	h.callbackHandlers["log:confirm"] = h.handleLogCreate6
 
 	h.callbackHandlers["log:create_back"] = h.handleLogCreateBack
 	h.callbackHandlers["log:calendar_back"] = h.handleLogCalendarBack

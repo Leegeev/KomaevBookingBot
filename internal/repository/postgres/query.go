@@ -131,14 +131,14 @@ WHERE id = $1;
 // LOGS
 const (
 	qInsertSoglashenie = `
-		INSERT INTO soglasheniya (user_id, user_name, date, doveritel, comment)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO soglasheniya (user_id, user_name, date, doveritel, comment, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id;
 	`
 
 	qInsertZapros = `
-		INSERT INTO zaprosy (user_id, user_name, date, doveritel, comment)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO zaprosy (user_id, user_name, date, doveritel, comment, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id;
 	`
 
@@ -146,7 +146,7 @@ const (
 		SELECT id, user_id, user_name, date, doveritel, comment, created_at
 		FROM soglasheniya
 		WHERE user_id = $1
-		ORDER BY created_at DESC
+		ORDER BY id DESC
     LIMIT 5;
 	`
 
@@ -154,7 +154,7 @@ const (
 		SELECT id, user_id, user_name, date, doveritel, comment, created_at
 		FROM zaprosy
 		WHERE user_id = $1
-		ORDER BY created_at DESC
+		ORDER BY id DESC
     LIMIT 5;
 	`
 
@@ -185,13 +185,15 @@ const (
 		SELECT id, user_id, user_name, date, doveritel, comment, created_at
 		FROM soglasheniya
 		WHERE created_at >= $1 AND created_at <= NOW()
-		ORDER BY created_at DESC;
+		ORDER BY id DESC;
 	`
 
 	qSelectZaprosyAfterDate = `
 		SELECT id, user_id, user_name, date, doveritel, comment, created_at
 		FROM zaprosy
 		WHERE created_at >= $1 AND created_at <= NOW()
-		ORDER BY created_at DESC;
+		ORDER BY id DESC;
 	`
 )
+
+// docker exec -it db psql -U user -d bookingbot-db -f /tmp/002_logs.up.sql

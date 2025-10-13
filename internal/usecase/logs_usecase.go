@@ -131,7 +131,7 @@ func (s *LogService) GetZaprosById(ctx context.Context, id int64) (domain.Zapros
 
 // Создание записи (соглашения или запроса)
 func (s *LogService) CreateLog(ctx context.Context, cmd CreateLogCmd) (int64, error) {
-	s.logger.Info("Creating log entry", "user", cmd.UserName, "type", cmd.Type)
+	s.logger.Info("Creating log entry", "user", cmd.UserName, "type", cmd.Type, "TZ:", s.cfg.OfficeTZ, "time", time.Now().In(s.cfg.OfficeTZ))
 
 	switch cmd.Type {
 	case "sogl":
@@ -142,6 +142,7 @@ func (s *LogService) CreateLog(ctx context.Context, cmd CreateLogCmd) (int64, er
 			Doveritel: cmd.Doveritel,
 			Comment:   cmd.Comment,
 			CreatedAt: time.Now().In(s.cfg.OfficeTZ),
+			// CreatedAt: time.Now(),
 		}
 
 		id, err := s.logRepo.CreateSoglashenie(ctx, sogl)
@@ -160,6 +161,7 @@ func (s *LogService) CreateLog(ctx context.Context, cmd CreateLogCmd) (int64, er
 			Doveritel: cmd.Doveritel,
 			Comment:   cmd.Comment,
 			CreatedAt: time.Now().In(s.cfg.OfficeTZ),
+			// CreatedAt: time.Now(),
 		}
 
 		id, err := s.logRepo.CreateZapros(ctx, z)
@@ -239,7 +241,7 @@ func (s *LogService) createZaprosExcel(zaprosy []domain.Zapros) (string, error) 
 	f := excelize.NewFile()
 	sheet := f.GetSheetName(0)
 
-	headers := []string{"ID", "User ID", "User Name", "Date", "Doveritel", "Comment", "Created At"}
+	headers := []string{"Номер №", "Дата", "Ф.И.О. Адвоката", "Доверитель", "Комментарий", "Дата создания", "UserID"}
 	for i, h := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet, cell, h)
@@ -247,16 +249,16 @@ func (s *LogService) createZaprosExcel(zaprosy []domain.Zapros) (string, error) 
 
 	for i, z := range zaprosy {
 		row := i + 2
-		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), z.ID)
-		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), z.UserID)
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), fmt.Sprintf("ЭЗ%d", z.ID))
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), z.Date.Format("2006-01-02"))
 		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), z.UserName)
-		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), z.Date.Format("2006-01-02"))
-		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), z.Doveritel)
-		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), z.Comment)
-		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), z.CreatedAt.Format("2006-01-02 15:04:05"))
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), z.Doveritel)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), z.Comment)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), z.CreatedAt.Format("2006-01-02 15:04:05"))
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), z.UserID)
 	}
 
-	filePath := fmt.Sprintf("zaprosy_report_%d.xlsx", time.Now().Unix())
+	filePath := fmt.Sprintf("/tmp/zaprosy_report_%d.xlsx", time.Now().Unix())
 	if err := f.SaveAs(filePath); err != nil {
 		return "", err
 	}
@@ -267,7 +269,7 @@ func (s *LogService) createSoglasheniyaExcel(soglasheniya []domain.Soglashenie) 
 	f := excelize.NewFile()
 	sheet := f.GetSheetName(0)
 
-	headers := []string{"ID", "User ID", "User Name", "Date", "Doveritel", "Comment", "Created At"}
+	headers := []string{"Номер №", "Дата", "Ф.И.О. Адвоката", "Доверитель", "Комментарий", "Дата создания", "UserID"}
 	for i, h := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet, cell, h)
@@ -275,16 +277,17 @@ func (s *LogService) createSoglasheniyaExcel(soglasheniya []domain.Soglashenie) 
 
 	for i, sgl := range soglasheniya {
 		row := i + 2
-		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), sgl.ID)
-		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), sgl.UserID)
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), fmt.Sprintf("ЭС%d", sgl.ID))
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), sgl.Date.Format("2006-01-02"))
 		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), sgl.UserName)
-		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), sgl.Date.Format("2006-01-02"))
-		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), sgl.Doveritel)
-		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), sgl.Comment)
-		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), sgl.CreatedAt.Format("2006-01-02 15:04:05"))
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), sgl.Doveritel)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), sgl.Comment)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), sgl.CreatedAt.Format("2006-01-02 15:04:05"))
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), sgl.UserID)
 	}
 
-	filePath := fmt.Sprintf("soglasheniya_report_%d.xlsx", time.Now().Unix())
+	// filePath := fmt.Sprintf("soglasheniya_report_%d.xlsx", time.Now().Unix())
+	filePath := fmt.Sprintf("/tmp/soglasheniya_report_%d.xlsx", time.Now().Unix())
 	if err := f.SaveAs(filePath); err != nil {
 		return "", err
 	}

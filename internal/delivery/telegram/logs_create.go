@@ -14,6 +14,7 @@ import (
 
 // Step 0. Начало флоу создания записи в журнале
 func (h *Handler) handleLogCreate0(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Debug("recieved log command handleLogCreate0")
 	if err := ctx.Err(); err != nil {
 		h.log.Warn("Context canceled in /handleLogSoglasheniya",
 			"user", msg.From.UserName,
@@ -21,6 +22,14 @@ func (h *Handler) handleLogCreate0(ctx context.Context, msg *tgbotapi.Message) {
 			"err", ctx.Err())
 		return
 	}
+	// CODE BELOW REMOVES DA KEYBOARD
+	emptyMsg := tgbotapi.NewMessage(msg.Chat.ID, "Скрываю клавиатуру...")
+	emptyMsg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+	sent, _ := h.bot.Send(emptyMsg)
+
+	del := tgbotapi.NewDeleteMessage(msg.Chat.ID, sent.MessageID)
+	h.bot.Send(del)
+	// END OF CODE
 
 	m := tgbotapi.NewMessage(msg.Chat.ID, tools.TextLogChooseType.String())
 	m.ParseMode = "MarkdownV2"
@@ -35,12 +44,12 @@ func (h *Handler) handleLogCreate0(ctx context.Context, msg *tgbotapi.Message) {
 // Step 1_0 (тип выбран)
 // Хендлер выбора типа записи и переход к выбору даты
 func (h *Handler) handleLogCreate1_0(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	h.log.Debug("recieved log command handleLogCreate1_0", "session", h.logSession.Get(cq.From.ID))
 	h.answerCB(cq, "")
 
 	parts := strings.Split(cq.Data, ":")
 	logType := parts[2]
 
-	// Создаем bookingSession и сохраняем в in-memory storage
 	h.logSession.Set(&tools.LogsSession{
 		State:     tools.StateProcessingLogCreating,
 		Type:      logType,
@@ -65,6 +74,7 @@ func (h *Handler) handleLogCreate1_0(ctx context.Context, cq *tgbotapi.CallbackQ
 // Step 1_1 (календарь сдвинут)
 // Хендлер сдвига календаря
 func (h *Handler) handleLogСreate1_1(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	h.log.Debug("recieved log command handleLogСreate1_1", "session", h.logSession.Get(cq.From.ID))
 	h.answerCB(cq, "")
 
 	// 1. Парсим направление навигации
@@ -89,8 +99,9 @@ func (h *Handler) handleLogСreate1_1(ctx context.Context, cq *tgbotapi.Callback
 }
 
 // Step 2 (дата выбрана)
-// Парсер выбора даты и переход к вводу времени
+// Парсер выбора даты и переход к вводу ФИО/Доверителя
 func (h *Handler) handleLogCreate2(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	h.log.Debug("recieved log command handleLogCreate2", "session", h.logSession.Get(cq.From.ID))
 	h.answerCB(cq, "")
 
 	parts := strings.Split(cq.Data, ":")
@@ -115,7 +126,7 @@ func (h *Handler) handleLogCreate2(ctx context.Context, cq *tgbotapi.CallbackQue
 
 	// Запрашивается, либо ввод ФИО
 	// либо ввод ДОВЕРИТЕЛЯ
-	if user, err := h.logsUC.GetUser(ctx, cq.From.ID); err == nil {
+	if user, err := h.logsUC.GetUser(ctx, cq.From.ID); err == nil { // ФИО есть в БД
 		session.State = tools.StateInputingDoveritel
 		session.UserName = user.FIO
 		edit = tgbotapi.NewEditMessageTextAndMarkup(
@@ -127,8 +138,9 @@ func (h *Handler) handleLogCreate2(ctx context.Context, cq *tgbotapi.CallbackQue
 					tools.BuildBackInlineKBButton("log:step3_back"),
 				}),
 		)
-	} else {
+	} else { // ФИО нет в БД, запрашиваем ввод
 		session.State = tools.StateInputingName
+		session.Registration = true
 		edit = tgbotapi.NewEditMessageTextAndMarkup(
 			cq.Message.Chat.ID,
 			cq.Message.MessageID,
@@ -151,6 +163,7 @@ func (h *Handler) handleLogCreate2(ctx context.Context, cq *tgbotapi.CallbackQue
 // Step 3 ФИО введено
 // Парсер Фио и ввод доверителя
 func (h *Handler) handleLogCreate3(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Debug("recieved log command handleLogCreate3", "session", h.logSession.Get(msg.From.ID))
 	FIO := strings.TrimSpace(msg.Text)
 	session := h.logSession.Get(msg.From.ID)
 	if session == nil {
@@ -158,25 +171,14 @@ func (h *Handler) handleLogCreate3(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	// Сохраняем ФИО в БД пользователей
-	if err := h.logsUC.CreateUser(ctx, msg.From.ID, FIO); err != nil {
-		h.log.Error("Failed to save user FIO", "err", err)
-		h.notifyAdmin("Ошибка при сохранении ФИО")
-		h.reply(msg.Chat.ID, "Ошибка при сохранении ФИО. Попробуйте еще раз.")
-		return
-	}
-
 	session.State = tools.StateInputingDoveritel // следующий шаг - ввод доверителя
 	session.UserName = FIO
 
-	edit := tgbotapi.NewEditMessageTextAndMarkup(
+	edit := tgbotapi.NewEditMessageReplyMarkup(
 		msg.Chat.ID,
 		session.MessageID,
-		tools.TextLogAskName.String(),
 		tools.BuildBlankInlineKB(),
 	)
-
-	edit.ParseMode = "MarkdownV2"
 	if _, err := h.bot.Send(edit); err != nil {
 		h.log.Error("Failed to edit message on handleLogCreate3", "err", err)
 	}
@@ -207,6 +209,7 @@ func (h *Handler) handleLogCreate3(ctx context.Context, msg *tgbotapi.Message) {
 // Step 4 Доверитель введен. Сразу сюда, если ФИО есть в БД
 // Парсер Доверителя и Ввод комментария
 func (h *Handler) handleLogCreate4(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Debug("recieved log command handleLogCreate4", "session", h.logSession.Get(msg.From.ID))
 	Doveritel := strings.TrimSpace(msg.Text)
 	session := h.logSession.Get(msg.From.ID)
 	if session == nil {
@@ -214,17 +217,14 @@ func (h *Handler) handleLogCreate4(ctx context.Context, msg *tgbotapi.Message) {
 		return
 	}
 
-	session.State = tools.StateInputingDoveritel
+	session.State = tools.StageInputingComment
 	session.Doveritel = Doveritel
 
-	edit := tgbotapi.NewEditMessageTextAndMarkup(
+	edit := tgbotapi.NewEditMessageReplyMarkup(
 		msg.Chat.ID,
 		session.MessageID,
-		tools.TextLogAskDoveritel.String(),
 		tools.BuildBlankInlineKB(),
 	)
-
-	edit.ParseMode = "MarkdownV2"
 	if _, err := h.bot.Send(edit); err != nil {
 		h.log.Error("Failed to edit message on handleLogCreate3", "err", err)
 	}
@@ -255,6 +255,7 @@ func (h *Handler) handleLogCreate4(ctx context.Context, msg *tgbotapi.Message) {
 // Step 5 Комментарий введен.
 // Парсер комментария и Подтверждение создания
 func (h *Handler) handleLogCreate5(ctx context.Context, msg *tgbotapi.Message) {
+	h.log.Debug("recieved log command handleLogCreate5", "session", h.logSession.Get(msg.From.ID))
 	comment := strings.TrimSpace(msg.Text)
 	session := h.logSession.Get(msg.From.ID)
 	if session == nil {
@@ -265,24 +266,36 @@ func (h *Handler) handleLogCreate5(ctx context.Context, msg *tgbotapi.Message) {
 	session.State = tools.StateCreateConfirming
 	session.Comment = comment
 
-	edit := tgbotapi.NewEditMessageTextAndMarkup(
+	edit := tgbotapi.NewEditMessageReplyMarkup(
 		msg.Chat.ID,
 		session.MessageID,
-		tools.BuildLogConfirmationStr(session).String(),
-		tools.BuildConfirmationKB("log"),
+		tools.BuildBlankInlineKB(),
 	)
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("Failed to edit message on handleLogCreate5", "err", err)
+	}
 
-	edit.ParseMode = "MarkdownV2"
+	newMsg := tgbotapi.NewMessage(msg.Chat.ID, tools.BuildLogConfirmationStr(session).String())
+	newMsg.ParseMode = "MarkdownV2"
+	newMsg.ReplyMarkup = tools.BuildConfirmationKB("log")
+
 	go func() {
-		if _, err := h.bot.Send(edit); err != nil {
-			h.log.Error("Failed to edit message on handleLogCreate5", "err", err)
+		sentMsg, err := h.bot.Send(newMsg)
+		if err != nil {
+			h.log.Error("Failed to send a new message on handleLogCreate5", "err", err)
+			return
 		}
+		// обновляем messageID в сессии
+		// чтобы при НАЗАД можно было его отредактировать
+		// (иначе будет редактироваться первое сообщение, а не текущее)
+		session.MessageID = sentMsg.MessageID
 	}()
 }
 
 // Step 6 Финиш
 // Парсер подтверждения и Создание записи
 func (h *Handler) handleLogCreate6(ctx context.Context, cq *tgbotapi.CallbackQuery) {
+	h.log.Debug("recieved log command handleLogCreate6", "session", h.logSession.Get(cq.From.ID))
 	h.answerCB(cq, "")
 
 	parts := strings.Split(cq.Data, ":")
@@ -314,11 +327,19 @@ func (h *Handler) handleLogCreate6(ctx context.Context, cq *tgbotapi.CallbackQue
 
 	var replyText string
 	if confirm == 1 {
+		// Сохраняем ФИО в БД пользователей
+		if session.Registration {
+			if err := h.logsUC.CreateUser(ctx, cq.From.ID, session.UserName); err != nil {
+				h.log.Error("Failed to save user FIO", "err", err, "user_id", cq.From.ID, "FIO", session.UserName)
+				h.notifyAdmin("Ошибка при сохранении ФИО")
+			}
+		}
 		num, err := h.logsUC.CreateLog(ctx, cmd)
 		if err != nil {
-			// TODO: обработать ошибку
+			replyText = tools.TextLogError.String()
+		} else {
+			replyText = tools.BuildLogConfirmedStr(session.Type, num).String()
 		}
-		replyText = tools.BuildLogConfirmedStr(num).String()
 	} else {
 		replyText = tools.TextLogNo.String()
 	}

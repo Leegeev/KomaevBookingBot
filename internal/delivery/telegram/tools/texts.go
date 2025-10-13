@@ -3,6 +3,7 @@ package tools
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
@@ -61,9 +62,9 @@ const (
 👤 ФИО: *%s*
 📜 Доверитель: *%s*
 💬 Комментарий: *%s*`
-	TextLogYes SafeText = `🎉 Запись успешно создана!
-	Ваш номер записи: *%d*.`
-	TextLogNo SafeText = "❌ Создание записи отменено."
+	TextLogYes            = "🎉 Запись успешно создана!\nВаш номер записи: `%s%d`"
+	TextLogError SafeText = `⚠️ Не получилось создать запись. Тех поддержка уже уведомлена`
+	TextLogNo    SafeText = "❌ Создание записи отменено."
 )
 
 // тексты /start /help menu
@@ -239,9 +240,15 @@ func BuildMyOperationStr(bk domain.Booking) SafeText {
 }
 
 func BuildLogConfirmationStr(sess *LogsSession) SafeText {
+	textType := ""
+	if sess.Type == "sogl" {
+		textType = "Соглашение"
+	} else {
+		textType = "Запрос"
+	}
 	return SafeText(fmt.Sprintf(
 		TextLogConfirm.String(),
-		sess.Type,
+		textType,
 		sess.Date.Format("02.01.2006"),
 		sess.UserName,
 		sess.Doveritel,
@@ -249,14 +256,21 @@ func BuildLogConfirmationStr(sess *LogsSession) SafeText {
 	))
 }
 
-func BuildLogConfirmedStr(num int64) SafeText {
+func BuildLogConfirmedStr(textType string, num int64) SafeText {
+	whatafak := ""
+	if textType == "sogl" {
+		whatafak = "ЭС"
+	} else {
+		whatafak = "ЭЗ"
+	}
 	return SafeText(fmt.Sprintf(
-		TextLogYes.String(),
+		TextLogYes,
+		whatafak,
 		num,
 	))
 }
 
-func BuildLogSoglListStr(logs []domain.Soglashenie) SafeText {
+func BuildLogSoglListStr(logs []domain.Soglashenie, tz *time.Location) SafeText {
 	if len(logs) == 0 {
 		return SafeText("📄 Соглашений не найдено.")
 	}
@@ -270,14 +284,14 @@ func BuildLogSoglListStr(logs []domain.Soglashenie) SafeText {
 		b.WriteString(fmt.Sprintf("📅 Дата: %s\n", log.Date.Format("02.01.2006")))
 		b.WriteString(fmt.Sprintf("👤 Доверитель: %s\n", log.Doveritel))
 		b.WriteString(fmt.Sprintf("💬 Комментарий: %s\n", log.Comment))
-		b.WriteString(fmt.Sprintf("⏰ Создано: %s\n", log.CreatedAt.Format("02.01.2006 15:04")))
+		b.WriteString(fmt.Sprintf("⏰ Создано: %s\n", log.CreatedAt.In(tz).Format("02.01.2006 15:04")))
 		b.WriteString("\n")
 	}
 
 	return SafeText(b.String())
 }
 
-func BuildLogZaprosiListStr(logs []domain.Zapros) SafeText {
+func BuildLogZaprosiListStr(logs []domain.Zapros, tz *time.Location) SafeText {
 	if len(logs) == 0 {
 		return SafeText("📄 Запросов не найдено.")
 	}
@@ -291,7 +305,7 @@ func BuildLogZaprosiListStr(logs []domain.Zapros) SafeText {
 		b.WriteString(fmt.Sprintf("📅 Дата: %s\n", log.Date.Format("02.01.2006")))
 		b.WriteString(fmt.Sprintf("👤 Доверитель: %s\n", log.Doveritel))
 		b.WriteString(fmt.Sprintf("💬 Комментарий: %s\n", log.Comment))
-		b.WriteString(fmt.Sprintf("⏰ Создано: %s\n", log.CreatedAt.Format("02.01.2006 15:04")))
+		b.WriteString(fmt.Sprintf("⏰ Создано: %s\n", log.CreatedAt.In(tz).Format("02.01.2006 15:04")))
 		b.WriteString("\n")
 	}
 
@@ -311,7 +325,7 @@ func EscapeMarkdownV2(text string) string {
 	// Список символов, требующих экранирования в MarkdownV2
 	escapeChars := map[rune]bool{
 		'_': true, '[': true, ']': true, '(': true, ')': true,
-		'~': true, '`': true, '>': true, '#': true, '+': true, '-': true,
+		'~': true, '>': true, '#': true, '+': true, '-': true,
 		'=': true, '|': true, '{': true, '}': true, '.': true, '!': true,
 		'\\': true,
 	}

@@ -207,8 +207,11 @@ func BuildMainMenuKB(role string) tgbotapi.ReplyKeyboardMarkup {
 		tgbotapi.NewKeyboardButton(TextMainScheduleButton),
 		tgbotapi.NewKeyboardButton(TextMainHelpButton),
 	)
+	row3 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(TextMainLogButton),
+	)
 
-	rows := [][]tgbotapi.KeyboardButton{row1, row2}
+	rows := [][]tgbotapi.KeyboardButton{row1, row2, row3}
 
 	// если админ — добавляем ещё ряд кнопок
 	if CheckRoleIsAdmin(role) {
@@ -245,7 +248,7 @@ func BuildLogMainKB(role string) tgbotapi.ReplyKeyboardMarkup {
 		rows = append(rows, row3)
 	}
 
-	// Bacл to main menu
+	// back to main menu
 	rowMenu := tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton(TextLogMainMenuButton),
 	)
@@ -255,15 +258,15 @@ func BuildLogMainKB(role string) tgbotapi.ReplyKeyboardMarkup {
 	// собираем клавиатуру
 	kb := tgbotapi.NewReplyKeyboard(rows...)
 	kb.ResizeKeyboard = true
-	kb.OneTimeKeyboard = true
+	kb.OneTimeKeyboard = false
 
 	return kb
 }
 
 func BuildLogCreateKB(faze string) tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 3)
-	// кнопка соглашения
-	{
+
+	{ // кнопка соглашения
 		btnText := TextLogSogl
 		// data := fmt.Sprintf("log:create:%d", 1)
 		// data := "log:create:sogl"
@@ -271,8 +274,8 @@ func BuildLogCreateKB(faze string) tgbotapi.InlineKeyboardMarkup {
 		btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
 	}
-	// кнопка запроса
-	{
+
+	{ // кнопка запроса
 		btnText := TextLogZapros
 		// data := fmt.Sprintf("log:create:%d", 2)
 		// data := "log:create:zapros"
@@ -280,12 +283,11 @@ func BuildLogCreateKB(faze string) tgbotapi.InlineKeyboardMarkup {
 		btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
 	}
-	// Кнопка назад
-	{
+
+	{ // Кнопка назад
 		btn := BuildBackInlineKBButton("log:create_back")
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
 	}
-
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
@@ -315,7 +317,6 @@ func BuildLogCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
 		row2 := make([]tgbotapi.InlineKeyboardButton, 0, 7) // дни недели
 		row3 := make([]tgbotapi.InlineKeyboardButton, 0, 7) // даты
 
-		today := now.Truncate(24 * time.Hour)
 		for i := range daysOfWeek {
 			day := startOfWeek.AddDate(0, 0, i)
 
@@ -324,7 +325,7 @@ func BuildLogCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
 
 			// Дата
 			var row3display, callback string
-			if shift == 0 && day.After(today) {
+			if shift == 0 && day.After(now) {
 				// будущие дни этой недели блокируем
 				row3display = "❌"
 				callback = "no:op"

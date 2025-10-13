@@ -61,14 +61,23 @@ func (h *Handler) handleLogMy1(ctx context.Context, cq *tgbotapi.CallbackQuery) 
 	logType := parts[2]
 	msgText := ""
 
+	edit := tgbotapi.NewEditMessageReplyMarkup(
+		cq.Message.Chat.ID,
+		cq.Message.MessageID,
+		tools.BuildBlankInlineKB(),
+	)
+	if _, err := h.bot.Send(edit); err != nil {
+		h.log.Error("Failed to EDIT message on handleLogCreate6 confirmation", "err", err)
+	}
+
 	if logType == "sogl" {
 		logs, _ := h.logsUC.GetSoglasheniyaByUserID(ctx, cq.From.ID)
-		msgText = tools.BuildLogSoglListStr(logs).String()
+		msgText = tools.BuildLogSoglListStr(logs, h.cfg.OfficeTZ).String()
 	}
 
 	if logType == "zapros" {
 		logs, _ := h.logsUC.GetZaprosiByUserID(ctx, cq.From.ID)
-		msgText = tools.BuildLogZaprosiListStr(logs).String()
+		msgText = tools.BuildLogZaprosiListStr(logs, h.cfg.OfficeTZ).String()
 	}
 
 	msg := tgbotapi.NewMessage(

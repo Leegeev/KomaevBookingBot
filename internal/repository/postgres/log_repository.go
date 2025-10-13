@@ -82,7 +82,7 @@ func (r *logRepositoryPG) CreateUser(ctx context.Context, id int64, fio string) 
 func (r *logRepositoryPG) CreateSoglashenie(ctx context.Context, s domain.Soglashenie) (int64, error) {
 	var newID int64
 	err := r.db.QueryRowxContext(ctx, qInsertSoglashenie,
-		int64(s.UserID), s.UserName, s.Date, s.Doveritel, s.Comment,
+		int64(s.UserID), s.UserName, s.Date, s.Doveritel, s.Comment, s.CreatedAt,
 	).Scan(&newID)
 
 	if err != nil {
@@ -94,7 +94,7 @@ func (r *logRepositoryPG) CreateSoglashenie(ctx context.Context, s domain.Soglas
 func (r *logRepositoryPG) CreateZapros(ctx context.Context, z domain.Zapros) (int64, error) {
 	var newID int64
 	err := r.db.QueryRowxContext(ctx, qInsertZapros,
-		int64(z.UserID), z.UserName, z.Date, z.Doveritel, z.Comment,
+		int64(z.UserID), z.UserName, z.Date, z.Doveritel, z.Comment, z.CreatedAt,
 	).Scan(&newID)
 
 	if err != nil {

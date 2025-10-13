@@ -61,9 +61,6 @@ func (h *Handler) handleMainMenu(ctx context.Context, msg *tgbotapi.Message) {
 		h.log.Warn("Failed to get user role on user", "err", err, "user_id", msg.From.ID, "username", msg.From.UserName)
 		role = tools.Member
 	}
-	if tools.CheckRoleIsAdmin(role) {
-		msgText += "\n\n" + tools.TextAdminStartMessage.String()
-	}
 
 	msgOut := tgbotapi.NewMessage(msg.Chat.ID, msgText)
 	msgOut.ReplyMarkup = tools.BuildMainMenuKB(role)
