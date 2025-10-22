@@ -23,4 +23,7 @@ var (
 	ErrDBConnectionFailed    = errors.New("failed to connect to database")
 	ErrInvalidInputData      = errors.New("invalid input data")
 	ErrNotOwner              = errors.New("user does not own this booking")
+
+	ErrRecordNotFound = errors.New("record not found")
+	ErrUserNotFound   = errors.New("user not found")
 )

@@ -127,3 +127,73 @@ UPDATE rooms
 SET is_active = TRUE
 WHERE id = $1;
 `
+
+// LOGS
+const (
+	qInsertSoglashenie = `
+		INSERT INTO soglasheniya (user_id, user_name, date, doveritel, comment, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id;
+	`
+
+	qInsertZapros = `
+		INSERT INTO zaprosy (user_id, user_name, date, doveritel, comment, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id;
+	`
+
+	qSelectSoglasheniyaByUser = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM soglasheniya
+		WHERE user_id = $1
+		ORDER BY id DESC
+    LIMIT 5;
+	`
+
+	qSelectZaprosyByUser = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM zaprosy
+		WHERE user_id = $1
+		ORDER BY id DESC
+    LIMIT 5;
+	`
+
+	qSelectSoglashenieByID = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM soglasheniya
+		WHERE id = $1;
+	`
+
+	qSelectZaprosByID = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM zaprosy
+		WHERE id = $1;
+	`
+
+	qInsertUser = `
+		INSERT INTO users (id, fio)
+		VALUES ($1, $2)
+		ON CONFLICT (id) DO UPDATE SET fio = EXCLUDED.fio;
+	`
+
+	qSelectUserByID = `
+		SELECT id, fio, created_at
+		FROM users
+		WHERE id = $1;
+	`
+	qSelectSoglasheniyaAfterDate = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM soglasheniya
+		WHERE created_at >= $1 AND created_at <= NOW()
+		ORDER BY id DESC;
+	`
+
+	qSelectZaprosyAfterDate = `
+		SELECT id, user_id, user_name, date, doveritel, comment, created_at
+		FROM zaprosy
+		WHERE created_at >= $1 AND created_at <= NOW()
+		ORDER BY id DESC;
+	`
+)
+
+// docker exec -it db psql -U user -d bookingbot-db -f /tmp/002_logs.up.sql

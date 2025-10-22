@@ -118,21 +118,23 @@ func BuildDurationKB() tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
-func BuildConfirmationKB() tgbotapi.InlineKeyboardMarkup {
+func BuildConfirmationKB(route string) tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 2)
 	// Кнопка с
 	yesBtn := tgbotapi.NewInlineKeyboardButtonData(
 		"✅Верно",
-		fmt.Sprintf("book:confirm:%d", 1),
+		fmt.Sprintf("%s:confirm:%d", route, 1),
 	)
 	noBtn := tgbotapi.NewInlineKeyboardButtonData(
 		"❌Отмена",
-		fmt.Sprintf("book:confirm:%d", 0),
+		fmt.Sprintf("%s:confirm:%d", route, 0),
 	)
 	row := tgbotapi.NewInlineKeyboardRow(yesBtn, noBtn)
 
 	rows = append(rows, row)
-	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("book:confirm_back")))
+
+	backdata := fmt.Sprintf("%s:confirm_back", route)
+	rows = append(rows, tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton(backdata)))
 	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }
 
@@ -205,8 +207,11 @@ func BuildMainMenuKB(role string) tgbotapi.ReplyKeyboardMarkup {
 		tgbotapi.NewKeyboardButton(TextMainScheduleButton),
 		tgbotapi.NewKeyboardButton(TextMainHelpButton),
 	)
+	row3 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(TextMainLogButton),
+	)
 
-	rows := [][]tgbotapi.KeyboardButton{row1, row2}
+	rows := [][]tgbotapi.KeyboardButton{row1, row2, row3}
 
 	// если админ — добавляем ещё ряд кнопок
 	if CheckRoleIsAdmin(role) {
@@ -223,4 +228,119 @@ func BuildMainMenuKB(role string) tgbotapi.ReplyKeyboardMarkup {
 	kb.OneTimeKeyboard = false
 
 	return kb
+}
+
+func BuildLogMainKB(role string) tgbotapi.ReplyKeyboardMarkup {
+	// Create & My buttons
+	row1 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(TextLogCreateButton),
+	)
+	row2 := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(TextLogMyButton),
+	)
+	rows := [][]tgbotapi.KeyboardButton{row1, row2}
+
+	// Expoty if admin
+	if CheckRoleIsAdmin(role) {
+		row3 := tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(TextLogExportButton),
+		)
+		rows = append(rows, row3)
+	}
+
+	// back to main menu
+	rowMenu := tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton(TextLogMainMenuButton),
+	)
+
+	rows = append(rows, rowMenu)
+
+	// собираем клавиатуру
+	kb := tgbotapi.NewReplyKeyboard(rows...)
+	kb.ResizeKeyboard = true
+	kb.OneTimeKeyboard = false
+
+	return kb
+}
+
+func BuildLogCreateKB(faze string) tgbotapi.InlineKeyboardMarkup {
+	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 3)
+
+	{ // кнопка соглашения
+		btnText := TextLogSogl
+		// data := fmt.Sprintf("log:create:%d", 1)
+		// data := "log:create:sogl"
+		data := fmt.Sprintf("log:%s:sogl", faze)
+		btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
+	}
+
+	{ // кнопка запроса
+		btnText := TextLogZapros
+		// data := fmt.Sprintf("log:create:%d", 2)
+		// data := "log:create:zapros"
+		data := fmt.Sprintf("log:%s:zapros", faze)
+		btn := tgbotapi.NewInlineKeyboardButtonData(btnText, data)
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
+	}
+
+	{ // Кнопка назад
+		btn := BuildBackInlineKBButton("log:create_back")
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(btn))
+	}
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
+}
+
+func BuildLogCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
+	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 4)
+	{ // Навигация
+		row := tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("⏪", fmt.Sprintf("log:calendar_nav:%d", shift-1)),
+			tgbotapi.NewInlineKeyboardButtonData("⏩", fmt.Sprintf("log:calendar_nav:%d", shift+1)),
+		)
+		rows = append(rows, row)
+	}
+
+	{ // Календарь
+		// Определяем понедельник текущей недели
+		now := time.Now()
+		weekday := int(now.Weekday())
+		if weekday == 0 {
+			weekday = 7 // воскресенье = 7
+		}
+		// смещаемся к понедельнику
+		startOfWeek := now.AddDate(0, 0, -(weekday - 1))
+		// смещаем shift недель
+		startOfWeek = startOfWeek.AddDate(0, 0, int(shift*7))
+
+		daysOfWeek := []string{"Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"}
+		row2 := make([]tgbotapi.InlineKeyboardButton, 0, 7) // дни недели
+		row3 := make([]tgbotapi.InlineKeyboardButton, 0, 7) // даты
+
+		for i := range daysOfWeek {
+			day := startOfWeek.AddDate(0, 0, i)
+
+			// День недели (некликабельный)
+			row2 = append(row2, tgbotapi.NewInlineKeyboardButtonData(daysOfWeek[i], "no:op"))
+
+			// Дата
+			var row3display, callback string
+			if shift == 0 && day.After(now) {
+				// будущие дни этой недели блокируем
+				row3display = "❌"
+				callback = "no:op"
+			} else {
+				row3display = day.Format("02.01")
+				callback = fmt.Sprintf("log:calendar:%s", day.Format("2006-01-02"))
+			}
+			row3 = append(row3, tgbotapi.NewInlineKeyboardButtonData(row3display, callback))
+		}
+		rows = append(rows, row2)
+		rows = append(rows, row3)
+	}
+	{ // Назад
+		row := tgbotapi.NewInlineKeyboardRow(BuildBackInlineKBButton("log:calendar_back"))
+		rows = append(rows, row)
+	}
+	return tgbotapi.NewInlineKeyboardMarkup(rows...)
 }

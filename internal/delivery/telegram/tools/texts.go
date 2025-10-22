@@ -3,6 +3,7 @@ package tools
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/leegeev/KomaevBookingBot/internal/domain"
 )
@@ -29,6 +30,41 @@ const (
 	TextMainCreateRoomButton = "➕ Создать комнату"
 	TextMainDeleteRoomButton = "🗑️ Удалить комнату"
 	TextMainHelpButton       = "ℹ️ Помощь"
+
+	// Журналы
+	TextMainLogButton = "📔 Соглашения и Запросы"
+
+	// Журналы управление
+	TextLogCreateButton   = "➕ Создать запись"
+	TextLogMyButton       = "🔍 Мои записи"
+	TextLogExportButton   = "📤 Экспортировать записи"
+	TextLogMainMenuButton = "🔙 В главное меню"
+)
+
+// тексты Журналов
+const (
+	TextLogMainMenu SafeText = "📔 Вы в меню журналов. Выберите действие:"
+	// Тексты inline
+	TextLogSogl   = "Соглашение"
+	TextLogZapros = "Запрос"
+
+	// Тексты Флоу Создания
+	TextLogChooseType SafeText = "➕ Выберите тип записи:"
+	TextLogCalendar   SafeText = "📅 Выберите дату:"
+	TextLogAskName    SafeText = `🙋‍♂️ Введите *ваше* ФИО:
+(При следующем создании записи, ФИО будет подставлено автоматически. 
+Отредактировать его можно будет только через админа)`
+	TextLogAskDoveritel SafeText = `📜 Введите сведения о доверителе:`
+	TextLogAskComment   SafeText = `💬 Опишите суть вопроса:`
+	TextLogConfirm      SafeText = `✅ Подтвердите создание записи:
+📝 Тип: *%s*
+📅 Дата: *%s*
+👤 ФИО: *%s*
+📜 Доверитель: *%s*
+💬 Комментарий: *%s*`
+	TextLogYes            = "🎉 Запись успешно создана!\nВаш номер записи: `%s%d`"
+	TextLogError SafeText = `⚠️ Не получилось создать запись. Тех поддержка уже уведомлена`
+	TextLogNo    SafeText = "❌ Создание записи отменено."
 )
 
 // тексты /start /help menu
@@ -203,6 +239,79 @@ func BuildMyOperationStr(bk domain.Booking) SafeText {
 	))
 }
 
+func BuildLogConfirmationStr(sess *LogsSession) SafeText {
+	textType := ""
+	if sess.Type == "sogl" {
+		textType = "Соглашение"
+	} else {
+		textType = "Запрос"
+	}
+	return SafeText(fmt.Sprintf(
+		TextLogConfirm.String(),
+		textType,
+		sess.Date.Format("02.01.2006"),
+		sess.UserName,
+		sess.Doveritel,
+		sess.Comment,
+	))
+}
+
+func BuildLogConfirmedStr(textType string, num int64) SafeText {
+	whatafak := ""
+	if textType == "sogl" {
+		whatafak = "ЭС"
+	} else {
+		whatafak = "ЭЗ"
+	}
+	return SafeText(fmt.Sprintf(
+		TextLogYes,
+		whatafak,
+		num,
+	))
+}
+
+func BuildLogSoglListStr(logs []domain.Soglashenie, tz *time.Location) SafeText {
+	if len(logs) == 0 {
+		return SafeText("📄 Соглашений не найдено.")
+	}
+
+	var b strings.Builder
+	b.WriteString("*📑 Список соглашений:*\n\n")
+
+	for i, log := range logs {
+		b.WriteString(fmt.Sprintf("%d. *%s*\n", i+1, log.UserName))
+		b.WriteString(fmt.Sprintf("🆔 ID: `ЭС%d`\n", log.ID))
+		b.WriteString(fmt.Sprintf("📅 Дата: %s\n", log.Date.Format("02.01.2006")))
+		b.WriteString(fmt.Sprintf("👤 Доверитель: %s\n", log.Doveritel))
+		b.WriteString(fmt.Sprintf("💬 Комментарий: %s\n", log.Comment))
+		b.WriteString(fmt.Sprintf("⏰ Создано: %s\n", log.CreatedAt.In(tz).Format("02.01.2006 15:04")))
+		b.WriteString("\n")
+	}
+
+	return SafeText(b.String())
+}
+
+func BuildLogZaprosiListStr(logs []domain.Zapros, tz *time.Location) SafeText {
+	if len(logs) == 0 {
+		return SafeText("📄 Запросов не найдено.")
+	}
+
+	var b strings.Builder
+	b.WriteString("*📊 Список запросов:*\n\n")
+
+	for i, log := range logs {
+		b.WriteString(fmt.Sprintf("%d. *%s*\n", i+1, log.UserName))
+		b.WriteString(fmt.Sprintf("🆔 ID: `ЭЗ%d`\n", log.ID))
+		b.WriteString(fmt.Sprintf("📅 Дата: %s\n", log.Date.Format("02.01.2006")))
+		b.WriteString(fmt.Sprintf("👤 Доверитель: %s\n", log.Doveritel))
+		b.WriteString(fmt.Sprintf("💬 Комментарий: %s\n", log.Comment))
+		b.WriteString(fmt.Sprintf("⏰ Создано: %s\n", log.CreatedAt.In(tz).Format("02.01.2006 15:04")))
+		b.WriteString("\n")
+	}
+
+	return SafeText(b.String())
+}
+
 type SafeText string
 
 func (t SafeText) String() string {
@@ -216,7 +325,7 @@ func EscapeMarkdownV2(text string) string {
 	// Список символов, требующих экранирования в MarkdownV2
 	escapeChars := map[rune]bool{
 		'_': true, '[': true, ']': true, '(': true, ')': true,
-		'~': true, '`': true, '>': true, '#': true, '+': true, '-': true,
+		'~': true, '>': true, '#': true, '+': true, '-': true,
 		'=': true, '|': true, '{': true, '}': true, '.': true, '!': true,
 		'\\': true,
 	}

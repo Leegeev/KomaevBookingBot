@@ -19,12 +19,14 @@ import (
 
 // Основной хэндлер
 type Handler struct {
-	bot       *tgbotapi.BotAPI
-	cfg       config.Telegram
-	log       logger.Logger
-	uc        *usecase.BookingService
-	sessions  *tools.SessionsStore // userID -> сессия бронирования
-	roleCache *RoleCache           // userID -> роль (user/admin)
+	bot        *tgbotapi.BotAPI
+	cfg        config.Telegram
+	log        logger.Logger
+	uc         *usecase.BookingService
+	logsUC     *usecase.LogService
+	sessions   *tools.SessionsStore // userID -> сессия бронирования
+	logSession *tools.LogsStore     // userID -> сессия журналов
+	roleCache  *RoleCache           // userID -> роль (user/admin)
 
 	messageID int64
 	msgMu     sync.Mutex
@@ -33,13 +35,15 @@ type Handler struct {
 	callbackHandlers map[string]func(ctx context.Context, cq *tgbotapi.CallbackQuery)
 }
 
-func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc *usecase.BookingService) *Handler {
+func NewHandler(bot *tgbotapi.BotAPI, cfg config.Telegram, log logger.Logger, uc *usecase.BookingService, logsUC *usecase.LogService) *Handler {
 	return &Handler{
 		bot:              bot,
 		cfg:              cfg,
 		log:              log,
 		uc:               uc,
+		logsUC:           logsUC,
 		sessions:         tools.NewSessionStore(),
+		logSession:       tools.NewLogsStore(),
 		roleCache:        NewRoleCache(cfg.RoleCacheTTL),
 		messageID:        0,
 		msgMu:            sync.Mutex{},
@@ -100,7 +104,7 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 		return
 	}
 
-	if upd.Message.Chat.Type != "private" {
+	if upd.Message != nil && upd.Message.Chat != nil && upd.Message.Chat.Type != "private" {
 		return
 	}
 
@@ -147,16 +151,26 @@ func (h *Handler) dispatch(ctx context.Context, upd tgbotapi.Update) {
 			return
 		}
 
-		sess := h.sessions.Get(upd.Message.From.ID)
+		bookSess := h.sessions.Get(upd.Message.From.ID)
+		logSess := h.logSession.Get(upd.Message.From.ID)
 		switch {
-		case sess == nil:
+		case bookSess == nil && logSess == nil:
 			h.reply(upd.Message.Chat.ID, "Необработанный ввод. Смотри /help")
 			return
-		case sess.BookState == tools.BookStateChoosingStartTime:
+		case bookSess != nil && bookSess.BookState == tools.BookStateChoosingStartTime:
 			h.handleBookTimepick(ctx, upd.Message)
 			return
-		case sess.BookState == tools.StateProccessingRoomCreation:
+		case bookSess != nil && bookSess.BookState == tools.StateProccessingRoomCreation:
 			h.handleCreateRoomProcessing(ctx, upd.Message)
+			return
+		case logSess != nil && logSess.State == tools.StateInputingName:
+			h.handleLogCreate3(ctx, upd.Message)
+			return
+		case logSess != nil && logSess.State == tools.StateInputingDoveritel:
+			h.handleLogCreate4(ctx, upd.Message)
+			return
+		case logSess != nil && logSess.State == tools.StageInputingComment:
+			h.handleLogCreate5(ctx, upd.Message)
 			return
 		default:
 			h.reply(upd.Message.Chat.ID, "Сессия не найдена. Смотри /help")
@@ -232,5 +246,40 @@ func (h *Handler) registerRoutes() {
 	h.callbackHandlers["deactivate:confirm_cancel"] = h.handleConfirmCancel
 	h.callbackHandlers["deactivate:confirm_back"] = h.handleDeactivateConfirmBack
 
-	// h.callbackHandlers["my:reschedule"] = h.handleMyReschedule
+	// ------------ Журналы ------------
+
+	// Журналы. Команды
+	h.commandHandlers["log"] = h.handleLog
+	h.commandHandlers["find"] = h.handleLogFind
+
+	// Журналы. Кнопки
+	h.commandHandlers[tools.TextMainLogButton] = h.handleLog
+	h.commandHandlers[tools.TextLogCreateButton] = h.handleLogCreate0
+	h.commandHandlers[tools.TextLogMyButton] = h.handleLogMy0
+	h.commandHandlers[tools.TextLogExportButton] = h.handleLogExport
+	h.commandHandlers[tools.TextLogMainMenuButton] = h.handleMainMenu
+
+	// Журналы коллбэки
+	h.callbackHandlers["log:create"] = h.handleLogCreate1_0
+	h.callbackHandlers["log:calendar_nav"] = h.handleLogСreate1_1
+	h.callbackHandlers["log:calendar"] = h.handleLogCreate2
+	h.callbackHandlers["log:confirm"] = h.handleLogCreate6
+
+	h.callbackHandlers["log:create_back"] = h.handleLogCreateBack
+	h.callbackHandlers["log:calendar_back"] = h.handleLogCalendarBack
+	h.callbackHandlers["log:step2_back"] = h.handleLogStep2Back
+	h.callbackHandlers["log:step3_back"] = h.handleLogStep3Back
+	h.callbackHandlers["log:step4_back"] = h.handleLogStep4Back
+	h.callbackHandlers["log:confirm_back"] = h.handleLogConfirmBack
+
+	h.callbackHandlers["log:my"] = h.handleLogMy1
+	// Флоу создания записи в журнале
+	// // Журналы. Управление
+	// h.commandHandlers[tools.TextLogSoglCreateButton] = h.handleLogSoglCreate
+	// h.commandHandlers[tools.TextLogSoglMyButton] = h.handleLogSoglMy
+	// h.commandHandlers[tools.TextLogSoglExportButton] = h.handleLogSoglExport
+
+	// h.commandHandlers[tools.TextLogAZCreateButton] = h.handleLogAZCreate
+	// h.commandHandlers[tools.TextLogAZMyButton] = h.handleLogAZMy
+	// h.commandHandlers[tools.TextLogAZExportButton] = h.handleLogAZExport
 }

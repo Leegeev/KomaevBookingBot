@@ -18,7 +18,7 @@ import (
 // /book
 func (h *Handler) handleBook(ctx context.Context, msg *tgbotapi.Message) {
 	if err := ctx.Err(); err != nil {
-		h.log.Warn("Context canceled in /my handler",
+		h.log.Warn("Context canceled in /handleBook handler",
 			"user", msg.From.UserName,
 			"chat_id", msg.Chat.ID,
 			"err", ctx.Err())
@@ -258,7 +258,7 @@ func (h *Handler) handleBookDuration(ctx context.Context, cq *tgbotapi.CallbackQ
 		cq.Message.Chat.ID,
 		cq.Message.MessageID,
 		tools.BuildConfirmationStr(session).String(),
-		tools.BuildConfirmationKB(),
+		tools.BuildConfirmationKB("book"),
 	)
 	edit.ParseMode = "MarkdownV2"
 	go func() {
