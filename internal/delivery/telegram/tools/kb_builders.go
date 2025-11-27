@@ -93,7 +93,8 @@ func BuildCalendarKB(shift int64) tgbotapi.InlineKeyboardMarkup {
 func BuildDurationKB() tgbotapi.InlineKeyboardMarkup {
 	rows := make([][]tgbotapi.InlineKeyboardButton, 0, 4)
 
-	for i := 1; i <= 8; i += 2 {
+	// for i := 1; i <= 8; i += 2 {
+	for i := 1; i <= 4; i += 2 {
 		// (0.5, 1.5, 2.5, 3.5)
 		left := float64(i) * 0.5
 		// (1.0, 2.0, 3.0, 4.0)
