@@ -5,9 +5,6 @@ CMD=$1
 
 case "$CMD" in
   start)
-    echo "🧹 Чищу старые контейнеры и тома..."
-    docker compose down -v
-
     echo "🚀 Запускаю db..."
     docker compose up -d db
 
@@ -23,9 +20,6 @@ case "$CMD" in
     ;;
 
   clear)
-    echo "🧹 Удаляю контейнеры и тома..."
-    docker compose down -v
-
     echo "🚀 Поднимаю db..."
     docker compose up -d db
     ;;
